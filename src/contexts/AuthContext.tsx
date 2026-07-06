@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import { hashPassword, writeAuditLog } from '../lib/security';
 
 // ────────────────────────────────────────────────────────────────────────────

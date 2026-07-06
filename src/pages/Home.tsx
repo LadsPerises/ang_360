@@ -9,7 +9,7 @@ export default function Home() {
     { title: 'Serra da Leba', province: 'Huíla', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop&fm=webp' },
   ];
 
-  const provinces = ['Luanda', 'Benguela', 'Huíla', 'Namibe', 'Malanje', 'Cabinda'];
+
 
   return (
     <div className="flex-1 w-full">

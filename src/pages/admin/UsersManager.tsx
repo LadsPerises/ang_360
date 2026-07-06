@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, UserCheck, UserX, Shield, MoreVertical, Mail, Calendar, MapPin, Award } from 'lucide-react';
+import { Search, UserCheck, UserX, Shield, MoreVertical, Mail, Calendar, Award } from 'lucide-react';
 
 type UserProfile = {
   id: string;

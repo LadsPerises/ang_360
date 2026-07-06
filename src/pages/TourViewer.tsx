@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Camera, Volume2, Info, MapPin, Calendar, User, Eye, Leaf, Landmark, Utensils, HelpCircle, ArrowLeft, CheckCircle, Maximize, Minimize, Thermometer, Cloud } from 'lucide-react';
+import { Camera, Volume2, Info, MapPin, Calendar, User, Eye, Leaf, Landmark, Utensils, HelpCircle, ArrowLeft, CheckCircle, Maximize, Minimize, Thermometer } from 'lucide-react';
 import { usePassportStore } from '../store/usePassportStore';
 import PannellumViewer from '../components/tour/PannellumViewer';
 
@@ -84,9 +84,10 @@ export default function TourViewer() {
 
   // Obter dados específicos da província ou usar um "fallback" (padrão)
   const currentTourId = id?.toLowerCase() || 'luanda';
+  const displayId = id || 'luanda';
   const tour = toursData[currentTourId] || {
-    title: id?.charAt(0).toUpperCase() + id?.slice(1),
-    province: id?.charAt(0).toUpperCase() + id?.slice(1) || 'Desconhecida',
+    title: displayId.charAt(0).toUpperCase() + displayId.slice(1),
+    province: displayId.charAt(0).toUpperCase() + displayId.slice(1),
     author: 'Equipa Angola360',
     date: 'Brevemente',
     bestTime: 'Maio a Setembro',
@@ -252,7 +253,7 @@ export default function TourViewer() {
               </div>
               <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">O que faz este lugar especial</h4>
               <ul className="space-y-3">
-                {tour.highlights.map((h, i) => (
+                {tour.highlights.map((h: string, i: number) => (
                   <li key={i} className="flex items-start gap-3 text-white/80 font-medium">
                     <CheckCircle className="text-secondary shrink-0 mt-0.5" size={18} /> {h}
                   </li>
@@ -271,7 +272,7 @@ export default function TourViewer() {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-6 leading-tight">{tour.quiz.question}</h3>
                 <div className="flex flex-col gap-2.5">
-                  {tour.quiz.answers.map((answer, i) => (
+                  {tour.quiz.answers.map((answer: string, i: number) => (
                     <label key={i} className="flex items-center gap-3 bg-black/40 hover:bg-secondary/20 border border-white/5 hover:border-secondary/50 p-3.5 rounded-xl cursor-pointer transition-all">
                       <input type="radio" name="quiz" className="text-secondary focus:ring-secondary accent-secondary w-4 h-4" />
                       <span className="text-white/90 font-medium text-sm">{answer}</span>

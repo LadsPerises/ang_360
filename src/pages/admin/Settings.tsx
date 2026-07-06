@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Bell, Shield, Globe, Database, Smartphone, Palette } from 'lucide-react';
+import { Save, Bell, Shield, Globe, Database, Palette } from 'lucide-react';
 
 export default function Settings() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
