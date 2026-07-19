@@ -32,18 +32,18 @@ function App() {
           <Route path="/sobre-nos" element={<AboutUs />} />
         </Route>
 
-        {/* Admin Login (public, no layout) */}
+        {/* Admin Login — path exato /admin (público, sem layout) */}
         <Route path="/admin" element={<AdminLogin />} />
 
-        {/* Protected Admin Area — RequireAuth blocks unauthenticated access */}
+        {/* Protected Admin Area — RequireAuth bloqueia acesso não autenticado.
+            Cada sub-rota usa AdminLayout como wrapper (que contém <Outlet/>). */}
         <Route element={<RequireAuth />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="tours" element={<ToursManager />} />
-            <Route path="users" element={<UsersManager />} />
-            <Route path="audit" element={<AuditLog />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<Dashboard />} />
+            <Route path="/admin/tours" element={<ToursManager />} />
+            <Route path="/admin/users" element={<UsersManager />} />
+            <Route path="/admin/audit" element={<AuditLog />} />
+            <Route path="/admin/settings" element={<Settings />} />
           </Route>
         </Route>
 

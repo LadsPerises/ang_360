@@ -34,8 +34,13 @@ export default function AdminLogin() {
       if (result.error?.includes('bloqueada')) {
         setIsLocked(true);
       }
+      return;
     }
-    // On success, the useEffect above handles the redirect
+
+    // Sucesso — redirecionar imediatamente para o dashboard.
+    // Preferimos a rota guardada (se vier de /admin/*) ou dashboard por defeito.
+    const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
+    navigate(from, { replace: true });
   };
 
   return (
