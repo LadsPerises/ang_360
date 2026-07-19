@@ -5,7 +5,6 @@ import { showcaseContent } from '../../data/landingContent';
 
 export default function ExperienceShowcase() {
   const {
-    badge,
     title,
     subtitle,
     panoramaImage,

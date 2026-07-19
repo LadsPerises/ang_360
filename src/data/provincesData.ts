@@ -1,4 +1,4 @@
-import { generateProvincePlaceholder } from '../lib/provinceImage';
+
 
 export interface ProvinceData {
   name: string;

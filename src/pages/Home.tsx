@@ -1,5 +1,5 @@
 import Hero from '../components/landing/Hero';
-import StatsBar from '../components/landing/StatsBar';
+
 import FeaturedTours from '../components/landing/FeaturedTours';
 import HowItWorks from '../components/landing/HowItWorks';
 import ExperienceShowcase from '../components/landing/ExperienceShowcase';

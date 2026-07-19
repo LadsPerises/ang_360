@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Compass, ChevronDown, MapPin, Camera, Globe } from 'lucide-react';
+import { Compass, MapPin, Camera, Globe } from 'lucide-react';
 import { heroContent } from '../../data/landingContent';
 
 // Mapa de ícones de credibilidade (string do ficheiro de dados → componente)

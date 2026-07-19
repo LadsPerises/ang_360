@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, X, Compass } from 'lucide-react';
 
 import { PROVINCES_DATA } from '../data/provincesData';
-import { generateTourPlaceholder, generateProvincePlaceholder } from '../lib/provinceImage';
+
 
 const PROVINCES = PROVINCES_DATA.map(p => p.name);
 

@@ -12,7 +12,7 @@
 //   // TODO:  → valor placeholder que precisa ser atualizado com dados reais
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { generateProvincePlaceholder, generateTourPlaceholder } from '../lib/provinceImage';
+import { generateProvincePlaceholder } from '../lib/provinceImage';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. HERO
