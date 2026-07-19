@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Angola360 — Configuração Apache (Hostinger)
+# Colocar em public/ (ou public_html/)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ─── 1. Bloquear acesso a ficheiros sensíveis ──────────────────────────────
+# (.env NUNCA deve estar dentro de public/, mas isto é rede de segurança)
+<FilesMatch "^\.|\.(env|sql|md|log|sh|bak|swp)$">
+    Require all denied
+</FilesMatch>
+
+# Esconder ficheiros ponto (ex: .git, .gitignore se deployed por engano)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# ─── 2. Impedir execução de PHP na pasta de uploads ────────────────────────
+# (defense-in-depth contra upload de webshells)
+<Directory "*/uploads/*">
+    php_admin_flag engine off
+    AddType text/plain .php .php3 .phtml .pht .phar
+    <FilesMatch "\.(php|php3|phtml|pht|phar)$">
+        Require all denied
+    </FilesMatch>
+</Directory>
+
+# ─── 3. Headers de segurança ───────────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    # CSP — ajustada à do index.html mas reforçada no servidor (layer extra)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://pannellum.org https://*.supabase.co; connect-src 'self' https://*.supabase.co https://api.open-meteo.com; frame-src 'none'; object-src 'none'; base-uri 'self'"
+</IfModule>
+
+# ─── 4. Forçar HTTPS ───────────────────────────────────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Redirecionar HTTP → HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# ─── 5. SPA fallback (React Router) ────────────────────────────────────────
+# Permite que /explore, /tour/luanda, etc. funcionem sem 404 no refresh.
+# MAS preserva o acesso aos endpoints /api/*
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # NÃO aplicar SPA fallback a /api nem a ficheiros reais
+    RewriteCond %{REQUEST_URI} !^/api/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+</IfModule>

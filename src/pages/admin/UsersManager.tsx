@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, UserCheck, UserX, Shield, MoreVertical, Mail, Calendar, Award, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Search, UserCheck, UserX, Shield, Mail, Calendar, Award, RefreshCw, ShieldAlert } from 'lucide-react';
 
 type UserProfile = {
   id: string;

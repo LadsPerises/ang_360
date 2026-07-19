@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# ── Segurança: credenciais e secrets NUNCA commitados ──
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+.htpasswd
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

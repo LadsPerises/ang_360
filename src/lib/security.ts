@@ -1,12 +1,18 @@
 /**
- * Security Utilities for Angola360 Admin
- * Centralizes sanitization, hashing, and audit logging.
+ * Security Utilities for Angola360
+ *
+ * NOTA: A validação real de senhas, sessões e rate limiting acontece no
+ * backend PHP (public/api/security.php). Este ficheiro contém apenas
+ * utilitários client-side (sanitização para display + audit log local).
+ *
+ * Em produção, o audit log deve também ser registado no servidor.
  */
 
-// ─── 1. Input Sanitization (XSS Prevention) ─────────────────────────────────
+// ─── 1. Input Sanitization (XSS Prevention para display) ───────────────────
 /**
- * Strips dangerous HTML tags and attributes from a string.
- * Use this before storing or rendering any user-provided input.
+ * Escapa caracteres HTML perigosos. Usar ANTES de inserir input de utilizador
+ * em qualquer sítio que possa ser interpretado como HTML.
+ * (React já escapa por defeito em {expressões} — isto é para edge cases.)
  */
 export function sanitizeInput(input: string): string {
   return input
@@ -19,30 +25,15 @@ export function sanitizeInput(input: string): string {
     .trim();
 }
 
-/**
- * Strips all HTML tags from a string (for plain text fields).
- */
+/** Remove todas as tags HTML. */
 export function stripHtml(input: string): string {
   return input.replace(/<[^>]*>/g, '').trim();
 }
 
-// ─── 2. Password Hashing (Web Crypto API) ────────────────────────────────────
-/**
- * Hashes a password using SHA-256 via the native Web Crypto API.
- * This avoids storing or comparing plain-text passwords in the code.
- * In production, hashing MUST happen on the server (e.g., bcrypt).
- */
-export async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// ─── 3. Audit Log ─────────────────────────────────────────────────────────────
+// ─── 2. Audit Log (local — complementar ao do servidor) ────────────────────
+// Em MVP, mantém um espelho client-side para visualização rápida no painel.
+// A fonte de verdade deve ser o log do servidor (error_log + tabela própria).
 const AUDIT_LOG_KEY = 'angola360_audit_log';
-const MAX_LOG_ENTRIES = 200;
 
 export type AuditEntry = {
   timestamp: string;
@@ -51,17 +42,6 @@ export type AuditEntry = {
   resource: string;
   details?: string;
 };
-
-export function writeAuditLog(entry: Omit<AuditEntry, 'timestamp'>) {
-  try {
-    const existing: AuditEntry[] = JSON.parse(localStorage.getItem(AUDIT_LOG_KEY) || '[]');
-    const newEntry: AuditEntry = { ...entry, timestamp: new Date().toISOString() };
-    const updated = [newEntry, ...existing].slice(0, MAX_LOG_ENTRIES);
-    localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(updated));
-  } catch {
-    // Storage quota — fail silently
-  }
-}
 
 export function readAuditLog(): AuditEntry[] {
   try {

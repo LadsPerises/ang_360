@@ -1,4 +1,4 @@
-import { Eye, Map, Users, TrendingUp, ArrowUpRight, Camera, CheckCircle } from 'lucide-react';
+import { Eye, Map, Users, TrendingUp, ArrowUpRight, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Dashboard() {

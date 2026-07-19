@@ -1,60 +1,93 @@
 <?php
-require_once '../db.php';
+/**
+ * admin/users.php — Gestão de utilizadores (apenas admins)
+ *
+ * Segurança aplicada:
+ *   - requireAdmin() bloqueia acesso não autorizado (V3)
+ *   - Prepared statements
+ *   - Não expõe password_hash
+ *   - Erros genéricos em produção (V4)
+ */
 
-$data = json_decode(file_get_contents('php://input'), true);
+declare(strict_types=1);
 
-// Ação de Bloquear / Ativar / Mudar Papel
-if (isset($data['action']) && $data['action'] === 'update_user') {
-    $userId = $data['user_id'];
-    $role = $data['role'] ?? null;
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../security.php';
+
+// 🛡️ GUARDA DE ADMIN — falha 401/403 se não autenticado ou não admin
+$admin = requireAdmin();
+
+$data = json_decode(file_get_contents('php://input'), true) ?: [];
+
+// ─── Ação: atualizar role/status ──────────────────────────────────────────
+if (($data['action'] ?? null) === 'update_user') {
+    $userId = $data['user_id'] ?? '';
+    if (!ctype_digit((string) $userId)) {
+        fail('ID de utilizador inválido.');
+    }
+    $userId = (int) $userId;
+    $role   = $data['role']   ?? null;
     $status = $data['status'] ?? null;
 
+    // Validar valores permitidos
+    $allowedRoles   = ['User', 'Admin'];
+    $allowedStatus  = ['Ativo', 'Bloqueado'];
+    if ($role !== null && !in_array($role, $allowedRoles, true)) $role = null;
+    if ($status !== null && !in_array($status, $allowedStatus, true)) $status = null;
+
+    // Impedir que um admin se bloqueie a si próprio ou bloqueie o único SUPER_ADMIN
+    if ($status === 'Bloqueado' && $userId === (int) $admin['id']) {
+        fail('Não pode bloquear a sua própria conta.');
+    }
+
     try {
-        if ($role) {
-            $stmt = $pdo->prepare("UPDATE users SET role = ? WHERE id = ?");
+        if ($role !== null) {
+            $stmt = $pdo->prepare('UPDATE users SET role = ? WHERE id = ?');
             $stmt->execute([$role, $userId]);
         }
-        if ($status) {
-            $stmt = $pdo->prepare("UPDATE users SET status = ? WHERE id = ?");
+        if ($status !== null) {
+            $stmt = $pdo->prepare('UPDATE users SET status = ? WHERE id = ?');
             $stmt->execute([$status, $userId]);
         }
-        echo json_encode(['success' => true]);
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'error' => 'Erro ao atualizar: ' . $e->getMessage()]);
+        jsonResponse(['success' => true]);
+    } catch (Throwable $e) {
+        jsonResponse(safeException($e), 500);
     }
-    exit();
 }
 
-// Obter todos os utilizadores
+// ─── Ação: listar utilizadores (GET ou POST vazio) ────────────────────────
 try {
     $stmt = $pdo->prepare("
-        SELECT u.id, u.name, u.email, u.role, u.status, u.created_at, 
-               p.level, p.stamps, p.avatar
-        FROM users u 
-        LEFT JOIN passports p ON u.id = p.user_id 
+        SELECT u.id, u.name, u.email, u.role, u.status, u.created_at,
+               p.stamps, p.avatar
+        FROM users u
+        LEFT JOIN passports p ON u.id = p.user_id
         ORDER BY u.created_at DESC
     ");
     $stmt->execute();
     $users = $stmt->fetchAll();
 
-    $formattedUsers = array_map(function($user) {
-        $stampsArray = json_decode($user['stamps'], true) ?: [];
-        $joinDateObj = new DateTime($user['created_at']);
-
+    $formatted = array_map(function ($u) {
+        $stamps = json_decode($u['stamps'] ?? '[]', true) ?: [];
+        $date   = $u['created_at'] ?? 'now';
+        try {
+            $joinDate = (new DateTime($date))->format('d M Y');
+        } catch (Throwable $e) {
+            $joinDate = $date;
+        }
         return [
-            'id' => (string)$user['id'],
-            'name' => $user['name'],
-            'email' => $user['email'],
-            'role' => $user['role'] ?? 'User',
-            'status' => $user['status'] ?? 'Ativo',
-            'joinDate' => $joinDateObj->format('d M Y'),
-            'stampsCollected' => count($stampsArray),
-            'avatarUrl' => $user['avatar'] ?? 'default'
+            'id'              => (string) $u['id'],
+            'name'            => $u['name'],
+            'email'           => $u['email'],
+            'role'            => $u['role'] ?? 'User',
+            'status'          => $u['status'] ?? 'Ativo',
+            'joinDate'        => $joinDate,
+            'stampsCollected' => count($stamps),
+            'avatarUrl'       => $u['avatar'] ?? 'default',
         ];
     }, $users);
 
-    echo json_encode(['success' => true, 'users' => $formattedUsers]);
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => 'Erro ao listar: ' . $e->getMessage()]);
+    jsonResponse(['success' => true, 'users' => $formatted]);
+} catch (Throwable $e) {
+    jsonResponse(safeException($e), 500);
 }
-?>

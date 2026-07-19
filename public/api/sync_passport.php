@@ -1,70 +1,115 @@
 <?php
-// sync_passport.php
-require_once 'db.php';
+/**
+ * sync_passport.php — Sincroniza o passaporte do utilizador autenticado
+ *
+ * Segurança aplicada:
+ *   - requireUser() bloqueia acesso anônimo (V7)
+ *   - IDOR fix: user_id é SEMPRE o da sessão, nunca o do payload.
+ *     Antes: qualquer um podia sobrescrever o passaporte de qualquer user.
+ *   - Validação de tipos nos campos
+ *   - Erros genéricos em produção (V4)
+ */
 
-$data = json_decode(file_get_contents('php://input'), true);
+declare(strict_types=1);
 
-if (!isset($data['user_id'])) {
-    echo json_encode(['success' => false, 'error' => 'ID de utilizador necessário']);
-    exit();
-}
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/security.php';
 
-$userId = $data['user_id'];
+// 🛡️ GUARDA DE UTILIZADOR
+$sessionUser = requireUser();
+$userId = (int) $sessionUser['id'];   // ← IDOR fix: ignorar qualquer user_id do cliente
 
-// Se for um método POST para GUARDAR o passaporte (sincronizar do Frontend para a BD)
-if (isset($data['action']) && $data['action'] === 'save') {
+$data = json_decode(file_get_contents('php://input'), true) ?: [];
+
+// ─── SAVE (frontend → BD) ──────────────────────────────────────────────────
+if (($data['action'] ?? null) === 'save') {
+    $p = $data['passport'] ?? [];
+    if (!is_array($p)) {
+        fail('Dados de passaporte inválidos.');
+    }
+
+    // Helpers de cast segura
+    $asStr   = fn($v, $d = '') => is_string($v) ? mb_substr($v, 0, 100) : $d;
+    $asInt   = fn($v, $d = 0)   => is_int($v) ? $v : (is_numeric($v) ? (int) $v : $d);
+    $asArr   = fn($v)           => is_array($v) ? json_encode(array_slice($v, 0, 500)) : '[]';
+
+    $level         = $asStr($p['level'] ?? 'Novato', 'Novato');
+    $stamps        = $asArr($p['stamps'] ?? []);
+    $mileage       = $asInt($p['mileage'] ?? 0, 0);
+    $wishlist      = $asArr($p['wishlist'] ?? []);
+    $missions      = $asArr($p['completedMissions'] ?? []);
+    $favorite      = $asStr($p['favoriteProvince'] ?? '', '');
+    $photos        = $asArr($p['photos'] ?? []);
+    $treasures     = $asArr($p['treasures'] ?? []);
+    $avatar        = $asStr($p['avatar'] ?? 'default', 'default');
+
     try {
-        $stmt = $pdo->prepare("UPDATE passports SET 
-            level = ?, 
-            stamps = ?, 
-            mileage = ?, 
-            wishlist = ?, 
-            completed_missions = ?, 
-            favorite_province = ?,
-            photos = ?,
-            treasures = ?,
-            avatar = ?
-            WHERE user_id = ?");
-            
+        // Upsert: se não existir, cria
+        $stmt = $pdo->prepare("
+            INSERT INTO passports (user_id, member_since, level, stamps, mileage, wishlist, completed_missions, favorite_province, photos, treasures, avatar)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                level = VALUES(level),
+                stamps = VALUES(stamps),
+                mileage = VALUES(mileage),
+                wishlist = VALUES(wishlist),
+                completed_missions = VALUES(completed_missions),
+                favorite_province = VALUES(favorite_province),
+                photos = VALUES(photos),
+                treasures = VALUES(treasures),
+                avatar = VALUES(avatar)
+        ");
         $stmt->execute([
-            $data['passport']['level'] ?? 'Novato',
-            json_encode($data['passport']['stamps'] ?? []),
-            $data['passport']['mileage'] ?? 0,
-            json_encode($data['passport']['wishlist'] ?? []),
-            json_encode($data['passport']['completedMissions'] ?? []),
-            $data['passport']['favoriteProvince'] ?? '',
-            json_encode($data['passport']['photos'] ?? []),
-            json_encode($data['passport']['treasures'] ?? []),
-            $data['passport']['avatar'] ?? 'default',
-            $userId
+            $userId,
+            date('d/m/Y'),
+            $level, $stamps, $mileage, $wishlist, $missions, $favorite, $photos, $treasures, $avatar,
         ]);
 
-        echo json_encode(['success' => true]);
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'error' => 'Erro ao gravar passaporte: ' . $e->getMessage()]);
+        jsonResponse(['success' => true]);
+    } catch (Throwable $e) {
+        jsonResponse(safeException($e), 500);
     }
-    exit();
 }
 
-// Caso contrário é para LER o passaporte (da BD para o Frontend)
+// ─── LOAD (BD → frontend) ──────────────────────────────────────────────────
 try {
     $stmt = $pdo->prepare('SELECT * FROM passports WHERE user_id = ?');
     $stmt->execute([$userId]);
     $passport = $stmt->fetch();
 
-    if ($passport) {
-        // Deserializar os JSONs
-        $passport['stamps'] = json_decode($passport['stamps'], true) ?: [];
-        $passport['wishlist'] = json_decode($passport['wishlist'], true) ?: [];
-        $passport['completedMissions'] = json_decode($passport['completed_missions'], true) ?: [];
-        $passport['photos'] = json_decode($passport['photos'], true) ?: [];
-        $passport['treasures'] = json_decode($passport['treasures'], true) ?: [];
-        
-        echo json_encode(['success' => true, 'passport' => $passport]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Passaporte não encontrado']);
+    if (!$passport) {
+        // Cria um passaporte vazio para o utilizador se não existir
+        $stmt = $pdo->prepare("
+            INSERT INTO passports (user_id, member_since, stamps, wishlist, completed_missions, photos, treasures, avatar)
+            VALUES (?, ?, '[]', '[]', '[]', '[]', '[]', 'default')
+        ");
+        $stmt->execute([$userId, date('d/m/Y')]);
+        $passport = [
+            'level'              => 'Novato',
+            'stamps'             => '[]',
+            'wishlist'           => '[]',
+            'completed_missions' => '[]',
+            'favorite_province'  => '',
+            'photos'             => '[]',
+            'treasures'          => '[]',
+            'avatar'             => 'default',
+        ];
     }
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => 'Erro ao carregar passaporte: ' . $e->getMessage()]);
+
+    jsonResponse([
+        'success'  => true,
+        'passport' => [
+            'level'             => $passport['level']              ?? 'Novato',
+            'stamps'            => json_decode($passport['stamps'] ?? '[]', true) ?: [],
+            'mileage'           => (int) ($passport['mileage']     ?? 0),
+            'wishlist'          => json_decode($passport['wishlist'] ?? '[]', true) ?: [],
+            'completedMissions' => json_decode($passport['completed_missions'] ?? '[]', true) ?: [],
+            'favoriteProvince'  => $passport['favorite_province']  ?? '',
+            'photos'            => json_decode($passport['photos'] ?? '[]', true) ?: [],
+            'treasures'         => json_decode($passport['treasures'] ?? '[]', true) ?: [],
+            'avatar'            => $passport['avatar']             ?? 'default',
+        ],
+    ]);
+} catch (Throwable $e) {
+    jsonResponse(safeException($e), 500);
 }
-?>

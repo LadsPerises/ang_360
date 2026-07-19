@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Camera, MapPin, Calendar, Award, Image as ImageIcon, Heart, Flag, Search, Trash2, Edit2, Check } from 'lucide-react';
+import { MapPin, Calendar, Flag, Search, Trash2, Edit2, Check } from 'lucide-react';
 import { usePassportStore, MISSIONS_CATALOG } from '../store/usePassportStore';
 import { PROVINCES_DATA } from '../data/provincesData';
 import AvatarSelector from '../components/passport/AvatarSelector';
@@ -9,10 +9,10 @@ import ShareCard from '../components/passport/ShareCard';
 const PROVINCES = PROVINCES_DATA.map(p => p.name);
 
 export default function Passport() {
-  const { 
-    name, level, stamps, mileage, memberSince, wishlist, photos, 
+  const {
+    name, level, stamps, mileage, memberSince,
     treasures, completedMissions, favoriteProvince,
-    setName, setFavoriteProvince, toggleWishlist, resetProgress
+    setName, setFavoriteProvince, resetProgress
   } = usePassportStore();
 
   const [isEditingName, setIsEditingName] = useState(false);

@@ -22,7 +22,7 @@ export default function PassportBook() {
           const rotate = isStamped ? (index * 17) % 40 - 20 : 0; 
           
           return (
-            <div key={province.id} className="flex flex-col items-center gap-2">
+            <div key={province.name} className="flex flex-col items-center gap-2">
               <div 
                 className={`w-16 h-16 rounded-full flex items-center justify-center relative ${isStamped ? 'bg-transparent' : 'border-2 border-dashed border-[#1a252f]/20 bg-[#1a252f]/5'}`}
               >

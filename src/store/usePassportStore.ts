@@ -36,6 +36,7 @@ interface PassportState {
   wishlist: string[];
   photos: Photo[];
   treasures: Treasure[];
+  completedMissions: string[];
   favoriteProvince: string;
   avatar: string;
   
@@ -50,7 +51,7 @@ interface PassportState {
   checkMissions: () => void;
   resetProgress: () => void;
   syncWithServer: () => Promise<void>;
-  loadFromServer: (userId: string) => Promise<void>;
+  loadFromServer: () => Promise<void>;
   uploadAvatar: (userId: string, file: File) => Promise<{ success: boolean; error?: string }>;
 }
 
@@ -116,8 +117,8 @@ export const usePassportStore = create<PassportState>()(
 
       checkMissions: () => {
         const state = get();
-        const { stamps, photos, treasures, completedMissions } = state;
-        let newCompleted = [...completedMissions];
+        const { stamps, treasures, completedMissions } = state;
+        const newCompleted = [...completedMissions];
 
         MISSIONS_CATALOG.forEach(mission => {
           if (!newCompleted.includes(mission.id)) {
@@ -151,20 +152,17 @@ export const usePassportStore = create<PassportState>()(
       }),
 
       syncWithServer: async () => {
+        // Em desenvolvimento sem backend, ignora
         if (import.meta.env.DEV) return;
         try {
-          const authData = localStorage.getItem('angola360_user_auth');
-          if (!authData) return;
-          const parsed = JSON.parse(authData);
-          const userId = parsed?.state?.user?.id;
-          if (!userId) return;
-
+          // user_id é determinado pelo servidor a partir da sessão (cookie httpOnly).
+          // Nunca confiamos em ID enviado pelo cliente (anti-IDOR).
           const state = get();
-          await fetch('/api/sync_passport.php', {
+          const res = await fetch('/api/sync_passport.php', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              user_id: userId,
               action: 'save',
               passport: {
                 level: state.level,
@@ -179,18 +177,21 @@ export const usePassportStore = create<PassportState>()(
               }
             })
           });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
         } catch (err) {
           console.error('Falha ao sincronizar passaporte:', err);
         }
       },
 
-      loadFromServer: async (userId: string) => {
+      loadFromServer: async () => {
+        // user_id vem da sessão no servidor.
         if (import.meta.env.DEV) return;
         try {
           const res = await fetch('/api/sync_passport.php', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId })
+            body: JSON.stringify({})
           });
           const data = await res.json();
           if (data.success && data.passport) {
@@ -211,14 +212,15 @@ export const usePassportStore = create<PassportState>()(
         }
       },
 
-      uploadAvatar: async (userId: string, file: File) => {
+      uploadAvatar: async (_userId: string, file: File) => {
+        // _userId é ignorado: o servidor usa a sessão para identificar o utilizador.
         try {
           const formData = new FormData();
-          formData.append('user_id', userId);
           formData.append('avatar', file);
 
           const res = await fetch('/api/upload_avatar.php', {
             method: 'POST',
+            credentials: 'include',
             body: formData,
           });
 

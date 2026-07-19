@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Share2, Download, Check } from 'lucide-react';
+import { Download, Check } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { usePassportStore } from '../../store/usePassportStore';
 
