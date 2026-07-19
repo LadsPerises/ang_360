@@ -2,13 +2,7 @@
 /**
  * admin/login.php — Login ADMINISTRADOR
  *
- * Diferença vs login.php público:
- *   - Rate limiting mais estrito: 5 tentativas / 15 min (V9)
- *   - Só permite role = Admin ou SUPER_ADMIN
- *   - Verifica status = Ativo
- *   - Sessão com flag de role
- *
- * Combina com requireAdmin() nos restantes endpoints /api/admin/* (V3).
+ * Rate limiting estrito (5/15min), só Admin/SUPER_ADMIN, sessão httpOnly.
  */
 
 declare(strict_types=1);
@@ -21,23 +15,18 @@ checkRateLimit('login_admin', 5, 900);
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
 
 if (empty($data['email']) || empty($data['password'])) {
-    fail('Dados incompletos.');
+    fail('Preencha email e senha.');
 }
 
 $email = trim((string) $data['email']);
 $password = (string) $data['password'];
 
-if ($email === '' || $password === '') {
-    fail('Preencha email e senha.');
-}
-
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    // Diagnosticar: mostrar o que recebeu (truncado) para o utilizador perceber
-    $preview = mb_substr($email, 0, 60);
-    fail("Email com formato inválido: '$preview'");
+if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    fail('Email com formato inválido.');
 }
 
 try {
+    // Buscar o utilizador (qualquer role — a verificação vem depois)
     $stmt = $pdo->prepare("
         SELECT u.id, u.name, u.email, u.password_hash, u.role, u.status, p.avatar
         FROM users u
@@ -50,25 +39,36 @@ try {
     // Mensagem idêntica para todos os casos de falha (anti-enumeration)
     $failMsg = 'Credenciais inválidas ou não tem permissão de administrador.';
 
-    if (!$user || !password_verify($password, $user['password_hash'])) {
-        usleep(random_int(300000, 700000)); // anti timing attack
-        fail($failMsg);
-    }
-
-    if (!in_array($user['role'] ?? '', ['Admin', 'SUPER_ADMIN'], true)) {
+    // 1. Utilizador não existe?
+    if (!$user) {
         usleep(random_int(300000, 700000));
         fail($failMsg);
     }
 
+    // 2. Password errada?
+    if (!password_verify($password, $user['password_hash'])) {
+        usleep(random_int(300000, 700000));
+        fail($failMsg);
+    }
+
+    // 3. Bloqueado?
     if (($user['status'] ?? 'Ativo') === 'Bloqueado') {
         fail('A sua conta de administrador foi bloqueada. Contacte o suporte.');
     }
 
+    // 4. Não é admin? (mensagem genérica para não vazar informação)
+    $role = $user['role'] ?? 'User';
+    if (!in_array($role, ['Admin', 'SUPER_ADMIN'], true)) {
+        usleep(random_int(300000, 700000));
+        fail($failMsg);
+    }
+
+    // ✅ Sucesso — criar sessão
     startUserSession([
         'id'    => (string) $user['id'],
         'email' => $user['email'],
         'name'  => $user['name'],
-        'role'  => $user['role'],
+        'role'  => $role,   // mantém o formato exato da BD ('Admin' ou 'SUPER_ADMIN')
     ]);
     clearRateLimit('login_admin');
 
@@ -78,7 +78,7 @@ try {
             'id'        => (string) $user['id'],
             'email'     => $user['email'],
             'name'      => $user['name'],
-            'role'      => $user['role'] === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN',
+            'role'      => $role,
             'avatarUrl' => $user['avatar'] ?? 'default',
         ],
     ]);
