@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Search, UserCheck, UserX, Shield, MoreVertical, Mail, Calendar, Award } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, UserCheck, UserX, Shield, MoreVertical, Mail, Calendar, Award, RefreshCw, ShieldAlert } from 'lucide-react';
 
 type UserProfile = {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Turista';
+  role: 'Admin' | 'User';
   status: 'Ativo' | 'Bloqueado';
   joinDate: string;
   stampsCollected: number;
@@ -13,23 +13,65 @@ type UserProfile = {
 };
 
 export default function UsersManager() {
-  const [users, setUsers] = useState<UserProfile[]>([
-    { id: '1', name: 'Ladislau Borges', email: 'ladislau@angola360.com', role: 'Admin', status: 'Ativo', joinDate: '01 Mai 2026', stampsCollected: 18, avatarUrl: 'LB' },
-    { id: '2', name: 'Ana Costa', email: 'ana.costa@gmail.com', role: 'Turista', status: 'Ativo', joinDate: '05 Mai 2026', stampsCollected: 4, avatarUrl: 'AC' },
-    { id: '3', name: 'Paulo Silva', email: 'paulo.s@yahoo.com', role: 'Turista', status: 'Ativo', joinDate: '06 Mai 2026', stampsCollected: 2, avatarUrl: 'PS' },
-    { id: '4', name: 'Marta Mendes', email: 'marta.mendes@hotmail.com', role: 'Turista', status: 'Bloqueado', joinDate: '07 Mai 2026', stampsCollected: 0, avatarUrl: 'MM' },
-    { id: '5', name: 'João Santos', email: 'joao.santos@outlook.com', role: 'Turista', status: 'Ativo', joinDate: '08 Mai 2026', stampsCollected: 1, avatarUrl: 'JS' },
-  ]);
-
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const toggleUserStatus = (userId: string) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        return { ...user, status: user.status === 'Ativo' ? 'Bloqueado' : 'Ativo' };
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/admin/users.php');
+      const data = await res.json();
+      if (data.success) {
+        setUsers(data.users);
       }
-      return user;
-    }));
+    } catch (err) {
+      console.error('Falha ao carregar utilizadores', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const updateUserStatus = async (userId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Ativo' ? 'Bloqueado' : 'Ativo';
+    try {
+      const res = await fetch('/api/admin/users.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_user', user_id: userId, status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus as 'Ativo' | 'Bloqueado' } : u));
+      } else {
+        alert('Erro ao atualizar estado.');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const promoteToAdmin = async (userId: string) => {
+    if (!window.confirm('Tens a certeza que queres promover este utilizador a Administrador?')) return;
+    try {
+      const res = await fetch('/api/admin/users.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_user', user_id: userId, role: 'Admin' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUsers(users.map(u => u.id === userId ? { ...u, role: 'Admin' } : u));
+      } else {
+        alert('Erro ao promover utilizador.');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const filteredUsers = users.filter(user => 
@@ -45,15 +87,20 @@ export default function UsersManager() {
           <p className="text-white/50">Gira os utilizadores registados e o progresso dos seus passaportes.</p>
         </div>
         
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-          <input 
-            type="text" 
-            placeholder="Pesquisar por nome ou email..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-primary/50 transition-all shadow-inner"
-          />
+        <div className="flex items-center gap-4">
+          <button onClick={fetchUsers} disabled={isLoading} className="text-white/50 hover:text-white transition-colors">
+            <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+          </button>
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+            <input 
+              type="text" 
+              placeholder="Pesquisar por nome ou email..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-primary/50 transition-all shadow-inner"
+            />
+          </div>
         </div>
       </div>
 
@@ -62,18 +109,22 @@ export default function UsersManager() {
           <div 
             key={user.id} 
             className="group bg-[#111] border border-white/5 hover:border-white/20 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:-translate-y-1 relative overflow-hidden"
-            style={{ animationDelay: `${idx * 100}ms` }}
+            style={{ animationDelay: `${idx * 50}ms` }}
           >
             {/* Background Glow based on Status/Role */}
             <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-[50px] opacity-20 pointer-events-none transition-colors duration-500 ${user.role === 'Admin' ? 'bg-secondary' : user.status === 'Bloqueado' ? 'bg-red-500' : 'bg-primary'}`}></div>
 
             <div className="flex justify-between items-start mb-6 relative z-10">
               <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-black shadow-lg ${user.role === 'Admin' ? 'bg-gradient-to-tr from-secondary to-yellow-200' : 'bg-gradient-to-tr from-primary to-orange-400'}`}>
-                  {user.avatarUrl}
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold text-black shadow-lg overflow-hidden relative ${user.role === 'Admin' ? 'bg-gradient-to-tr from-secondary to-yellow-200' : 'bg-gradient-to-tr from-primary to-orange-400'}`}>
+                  {user.avatarUrl && user.avatarUrl.startsWith('/uploads/') ? (
+                    <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    user.avatarUrl === 'default' || !user.avatarUrl ? user.name.charAt(0).toUpperCase() : user.avatarUrl
+                  )}
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg leading-tight">{user.name}</h3>
+                  <h3 className="text-white font-bold text-lg leading-tight truncate w-32" title={user.name}>{user.name}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     {user.role === 'Admin' ? (
                       <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded border border-secondary/20"><Shield size={10} /> Admin</span>
@@ -84,15 +135,17 @@ export default function UsersManager() {
                 </div>
               </div>
               
-              <button className="text-white/30 hover:text-white transition-colors">
-                <MoreVertical size={18} />
-              </button>
+              {user.role !== 'Admin' && (
+                <button onClick={() => promoteToAdmin(user.id)} title="Promover a Admin" className="text-white/20 hover:text-secondary transition-colors">
+                  <ShieldAlert size={18} />
+                </button>
+              )}
             </div>
 
             <div className="space-y-3 mb-6 relative z-10">
               <div className="flex items-center gap-3 text-sm text-white/60">
                 <Mail size={14} className="text-white/30" />
-                <span className="truncate">{user.email}</span>
+                <span className="truncate" title={user.email}>{user.email}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-white/60">
                 <Calendar size={14} className="text-white/30" />
@@ -104,12 +157,12 @@ export default function UsersManager() {
             <div className="mb-6 relative z-10">
               <div className="flex justify-between items-end mb-2">
                 <span className="text-xs text-white/50 uppercase tracking-wider font-bold flex items-center gap-1"><Award size={12} className="text-primary"/> Passaporte</span>
-                <span className="text-sm font-bold text-white">{user.stampsCollected} <span className="text-white/30 font-normal">/ 18</span></span>
+                <span className="text-sm font-bold text-white">{user.stampsCollected} <span className="text-white/30 font-normal">/ 21</span></span>
               </div>
               <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-primary to-orange-500 rounded-full transition-all duration-1000 ease-out" 
-                  style={{ width: `${(user.stampsCollected / 18) * 100}%` }}
+                  style={{ width: `${(user.stampsCollected / 21) * 100}%` }}
                 ></div>
               </div>
             </div>
@@ -121,7 +174,7 @@ export default function UsersManager() {
               </span>
               
               <button 
-                onClick={() => toggleUserStatus(user.id)}
+                onClick={() => updateUserStatus(user.id, user.status)}
                 className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${user.status === 'Ativo' ? 'text-white/50 hover:text-red-400 hover:bg-red-400/10' : 'text-white/50 hover:text-green-400 hover:bg-green-400/10'}`}
               >
                 {user.status === 'Ativo' ? 'Bloquear' : 'Desbloquear'}
@@ -130,11 +183,11 @@ export default function UsersManager() {
           </div>
         ))}
 
-        {filteredUsers.length === 0 && (
+        {!isLoading && filteredUsers.length === 0 && (
           <div className="col-span-full py-12 text-center border border-white/5 border-dashed rounded-2xl bg-white/[0.02]">
             <Search className="mx-auto text-white/20 mb-4" size={40} />
             <h3 className="text-xl font-bold text-white mb-2">Nenhum utilizador encontrado</h3>
-            <p className="text-white/50">Não foram encontrados resultados para "{searchTerm}"</p>
+            <p className="text-white/50">Não foram encontrados resultados na base de dados.</p>
           </div>
         )}
       </div>

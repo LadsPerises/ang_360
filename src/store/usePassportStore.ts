@@ -22,7 +22,7 @@ export interface Mission {
 
 export const MISSIONS_CATALOG: Mission[] = [
   { id: 'first_step', label: 'Primeiro Passo', desc: 'Desbloqueie o primeiro carimbo provincial.', type: 'visita', reward: 'Filtro visual Recruta 360' },
-  { id: 'angle_perfect', label: 'O Ângulo Perfeito', desc: 'Capture uma foto no visualizador 360.', type: 'camera', reward: 'Moldura neon para screenshots' },
+  // { id: 'angle_perfect', label: 'O Ângulo Perfeito', desc: 'Capture uma foto no visualizador 360.', type: 'camera', reward: 'Moldura neon para screenshots' },
   { id: 'treasure_hunter', label: 'Caça ao Tesouro Histórico', desc: 'Encontre um tesouro cultural escondido.', type: 'tesouro', reward: 'Acesso a galeria histórica' },
   { id: 'national_route', label: 'Rota Nacional', desc: 'Desbloqueie as 21 províncias do passaporte.', type: 'visita', reward: 'Vídeos em drone e selo nacional' },
 ];
@@ -36,11 +36,12 @@ interface PassportState {
   wishlist: string[];
   photos: Photo[];
   treasures: Treasure[];
-  completedMissions: string[];
   favoriteProvince: string;
+  avatar: string;
   
   // Actions
   setName: (name: string) => void;
+  setAvatar: (avatar: string) => void;
   setFavoriteProvince: (province: string) => void;
   toggleWishlist: (province: string) => void;
   unlockStamp: (province: string) => void;
@@ -50,6 +51,7 @@ interface PassportState {
   resetProgress: () => void;
   syncWithServer: () => Promise<void>;
   loadFromServer: (userId: string) => Promise<void>;
+  uploadAvatar: (userId: string, file: File) => Promise<{ success: boolean; error?: string }>;
 }
 
 const calculateLevel = (stampsCount: number, missionsCount: number) => {
@@ -73,8 +75,13 @@ export const usePassportStore = create<PassportState>()(
       treasures: [],
       completedMissions: [],
       favoriteProvince: '',
+      avatar: 'default',
 
       setName: (name) => set({ name }),
+      setAvatar: (avatar) => {
+        set({ avatar });
+        get().syncWithServer();
+      },
       setFavoriteProvince: (province) => set({ favoriteProvince: province }),
 
       toggleWishlist: (province) => {
@@ -116,7 +123,7 @@ export const usePassportStore = create<PassportState>()(
           if (!newCompleted.includes(mission.id)) {
             let completed = false;
             if (mission.id === 'first_step' && stamps.length >= 1) completed = true;
-            if (mission.id === 'angle_perfect' && photos.length >= 1) completed = true;
+            // if (mission.id === 'angle_perfect' && photos.length >= 1) completed = true;
             if (mission.id === 'treasure_hunter' && treasures.length >= 1) completed = true;
             if (mission.id === 'national_route' && stamps.length >= 21) completed = true;
 
@@ -146,7 +153,6 @@ export const usePassportStore = create<PassportState>()(
       syncWithServer: async () => {
         if (import.meta.env.DEV) return;
         try {
-          // Precisamos do ID do utilizador (poderia vir de uma store partilhada, mas para simplicidade no React, pegamos do localStorage)
           const authData = localStorage.getItem('angola360_user_auth');
           if (!authData) return;
           const parsed = JSON.parse(authData);
@@ -167,6 +173,7 @@ export const usePassportStore = create<PassportState>()(
                 wishlist: state.wishlist,
                 completedMissions: state.completedMissions,
                 favoriteProvince: state.favoriteProvince,
+                avatar: state.avatar,
                 photos: state.photos,
                 treasures: state.treasures
               }
@@ -194,6 +201,7 @@ export const usePassportStore = create<PassportState>()(
               wishlist: data.passport.wishlist || [],
               completedMissions: data.passport.completedMissions || [],
               favoriteProvince: data.passport.favoriteProvince || '',
+              avatar: data.passport.avatar || 'default',
               photos: data.passport.photos || [],
               treasures: data.passport.treasures || []
             });
@@ -201,10 +209,33 @@ export const usePassportStore = create<PassportState>()(
         } catch (err) {
           console.error('Falha ao carregar passaporte:', err);
         }
+      },
+
+      uploadAvatar: async (userId: string, file: File) => {
+        try {
+          const formData = new FormData();
+          formData.append('user_id', userId);
+          formData.append('avatar', file);
+
+          const res = await fetch('/api/upload_avatar.php', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await res.json();
+          if (data.success && data.avatarPath) {
+            set({ avatar: data.avatarPath });
+            return { success: true };
+          }
+          return { success: false, error: data.error || 'Erro no upload' };
+        } catch (err) {
+          console.error(err);
+          return { success: false, error: 'Erro de ligação ao servidor' };
+        }
       }
     }),
     {
-      name: 'angola360-passport-storage', // saves to localStorage automatically
+      name: 'angola360-passport-storage',
     }
   )
 );

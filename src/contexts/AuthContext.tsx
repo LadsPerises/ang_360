@@ -5,9 +5,11 @@ import { hashPassword, writeAuditLog } from '../lib/security';
 // Types
 // ────────────────────────────────────────────────────────────────────────────
 export type AdminUser = {
+  id?: string;
   email: string;
   name: string;
   role: 'SUPER_ADMIN' | 'ADMIN';
+  avatarUrl?: string;
 };
 
 type AuthState = {
@@ -21,14 +23,9 @@ type AuthState = {
 // ────────────────────────────────────────────────────────────────────────────
 // Mock credentials: passwords are stored as SHA-256 hashes — never plain text.
 // Hash of 'Angola360@2026': 1aa61c659b18c7f3a024c670b3ad207f1000abdf73dc79c7866b441df6823c9f
+// Mocks removidos porque usamos o MySQL
 // (To be replaced by supabase.auth.signInWithPassword when connected)
 // ────────────────────────────────────────────────────────────────────────────
-const MOCK_ADMINS: Record<string, { passwordHash: string; user: AdminUser }> = {
-  'admin@angola360.ao': {
-    passwordHash: '1aa61c659b18c7f3a024c670b3ad207f1000abdf73dc79c7866b441df6823c9f',
-    user: { email: 'admin@angola360.ao', name: 'Administrador', role: 'SUPER_ADMIN' }
-  },
-};
 
 const SESSION_KEY = 'angola360_admin_session';
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -157,44 +154,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: `Conta bloqueada. Tente novamente em ${minsLeft} minuto(s).` };
     }
 
-    // Simulate network delay
-    await new Promise(res => setTimeout(res, 1200));
-
-    // 2. Hash the provided password and compare
     const sanitizedEmail = email.trim().toLowerCase();
-    const passwordHash = await hashPassword(password);
-    const record = MOCK_ADMINS[sanitizedEmail];
 
-    if (!record || record.passwordHash !== passwordHash) {
-      const attempts = recordAttempt();
-      const remaining = MAX_LOGIN_ATTEMPTS - attempts;
-
-      writeAuditLog({
-        adminEmail: sanitizedEmail,
-        action: 'LOGIN_FAILED',
-        resource: 'session',
-        details: `Attempt ${attempts}/${MAX_LOGIN_ATTEMPTS}`
-      });
-
-      if (remaining <= 0) {
-        return { success: false, error: 'Demasiadas tentativas. Conta bloqueada por 15 minutos.' };
+    try {
+      if (import.meta.env.DEV) {
+        if (email === 'admin@angola360.ao' && password === 'admin123') {
+          const userObj: AdminUser = { email, name: 'Admin (Dev)', role: 'SUPER_ADMIN' };
+          resetAttempts();
+          saveSession(userObj);
+          setUser(userObj);
+          writeAuditLog({ adminEmail: email, action: 'LOGIN', resource: 'session', details: 'DEV Mock Login' });
+          return { success: true };
+        }
       }
-      return { success: false, error: `Credenciais inválidas. ${remaining} tentativa(s) restante(s).` };
+
+      const res = await fetch('/api/admin/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: sanitizedEmail, password })
+      });
+      const data = await res.json();
+
+      if (data.success && data.user) {
+        const userObj: AdminUser = data.user;
+        resetAttempts();
+        saveSession(userObj);
+        setUser(userObj);
+        writeAuditLog({ adminEmail: sanitizedEmail, action: 'LOGIN', resource: 'session', details: 'Successful login via PHP' });
+        return { success: true };
+      } else {
+        const attempts = recordAttempt();
+        const remaining = MAX_LOGIN_ATTEMPTS - attempts;
+        writeAuditLog({ adminEmail: sanitizedEmail, action: 'LOGIN_FAILED', resource: 'session', details: `Attempt ${attempts}` });
+        
+        if (remaining <= 0) {
+          return { success: false, error: 'Demasiadas tentativas. Conta bloqueada.' };
+        }
+        return { success: false, error: data.error || 'Credenciais inválidas.' };
+      }
+    } catch (err) {
+      console.error(err);
+      return { success: false, error: 'Erro de ligação ao servidor.' };
     }
-
-    // 3. Success
-    resetAttempts();
-    saveSession(record.user);
-    setUser(record.user);
-
-    writeAuditLog({
-      adminEmail: record.user.email,
-      action: 'LOGIN_SUCCESS',
-      resource: 'session',
-      details: `Role: ${record.user.role}`
-    });
-
-    return { success: true };
   };
 
   return (

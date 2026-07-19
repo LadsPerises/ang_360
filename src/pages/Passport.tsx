@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Camera, MapPin, Calendar, Award, Image as ImageIcon, Heart, Flag, Search, Trash2, Edit2, Check } from 'lucide-react';
 import { usePassportStore, MISSIONS_CATALOG } from '../store/usePassportStore';
 import { PROVINCES_DATA } from '../data/provincesData';
+import AvatarSelector from '../components/passport/AvatarSelector';
+import PassportBook from '../components/passport/PassportBook';
+import ShareCard from '../components/passport/ShareCard';
 
 const PROVINCES = PROVINCES_DATA.map(p => p.name);
 
@@ -31,11 +34,8 @@ export default function Passport() {
         {/* Sidebar / User Profile */}
         <aside className="glass p-8 rounded-3xl h-fit sticky top-28 flex flex-col gap-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
           <div className="text-center relative">
-            <div className="w-32 h-32 rounded-full mx-auto mb-6 bg-gradient-to-br from-primary via-secondary to-purple-600 flex items-center justify-center text-5xl font-black text-white shadow-[0_0_30px_rgba(214,38,38,0.4)] relative border-4 border-dark-bg">
-              {name.charAt(0).toUpperCase()}
-              <div className="absolute -bottom-2 -right-2 bg-dark-card rounded-full p-2 text-xl border border-white/20 shadow-lg" title={`Nível: ${level}`}>
-                {level === 'Novato' ? '🐣' : level === 'Recruta' ? '🔰' : level === 'Viajante' ? '🚶' : '🏆'}
-              </div>
+            <div className="mx-auto flex justify-center mb-6">
+              <AvatarSelector />
             </div>
             
             {isEditingName ? (
@@ -119,41 +119,20 @@ export default function Passport() {
         {/* Main Content */}
         <main className="flex flex-col gap-8">
           
+          {/* Card Sharing Area */}
+          <section className="flex flex-col md:flex-row gap-8 items-center justify-between glass p-8 rounded-3xl border border-white/10 relative overflow-hidden">
+            <div className="flex-1 relative z-10">
+              <h3 className="text-3xl font-bold text-white mb-4">O Teu Bilhete de Explorador</h3>
+              <p className="text-white/70 mb-6">Aqui tens o teu cartão de identidade de membro do Angola360. Podes partilhá-lo no Instagram, WhatsApp ou onde quiseres para mostrares o teu progresso aos teus amigos!</p>
+            </div>
+            <div className="relative z-10 scale-90 md:scale-100 origin-center">
+              <ShareCard />
+            </div>
+          </section>
+
           {/* Stamps Gallery */}
           <section className="glass p-8 rounded-3xl border border-white/10">
-            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <Award className="text-primary" /> Galeria de Carimbos
-            </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-              {PROVINCES.map(prov => {
-                const isUnlocked = stamps.includes(prov);
-                const isWishlist = wishlist.includes(prov);
-                const provinceData = PROVINCES_DATA.find(p => p.name === prov);
-                return (
-                  <div key={prov} className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center p-2 text-center transition-all overflow-hidden ${isUnlocked ? 'border-2 border-primary shadow-[0_0_15px_rgba(214,38,38,0.3)]' : 'border border-dashed border-white/20 opacity-60'}`}>
-                    {/* Background Image */}
-                    {provinceData && (
-                      <div className="absolute inset-0 z-0">
-                        <img src={provinceData.image} alt={prov} className="w-full h-full object-cover opacity-30" />
-                        <div className={`absolute inset-0 ${isUnlocked ? 'bg-primary/20' : 'bg-black/60 backdrop-blur-[2px]'}`}></div>
-                      </div>
-                    )}
-                    
-                    <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
-                      {isUnlocked ? (
-                        <MapPin className="text-primary mb-2 drop-shadow-md" size={28} />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md mb-2 border border-white/5" />
-                      )}
-                      <span className="text-xs font-bold leading-tight drop-shadow-md">{prov}</span>
-                    </div>
-                    <button onClick={() => toggleWishlist(prov)} className={`absolute top-1 right-1 p-1 rounded-full z-20 ${isWishlist ? 'text-secondary' : 'text-white/40 hover:text-white/80'} bg-black/20 backdrop-blur-md`}>
-                      <Heart size={14} fill={isWishlist ? 'currentColor' : 'none'} />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
+            <PassportBook />
           </section>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -183,6 +162,7 @@ export default function Passport() {
 
             {/* Logbook & Treasures */}
             <div className="flex flex-col gap-8">
+              {/* Secção de fotos em standby
               <section className="glass p-8 rounded-3xl border border-white/10 flex-1">
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                   <ImageIcon className="text-primary" /> Diário de Bordo
@@ -206,6 +186,7 @@ export default function Passport() {
                   </div>
                 )}
               </section>
+              */}
 
               <section className="glass p-8 rounded-3xl border border-white/10 flex-1">
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">

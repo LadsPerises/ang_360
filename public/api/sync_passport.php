@@ -22,7 +22,8 @@ if (isset($data['action']) && $data['action'] === 'save') {
             completed_missions = ?, 
             favorite_province = ?,
             photos = ?,
-            treasures = ?
+            treasures = ?,
+            avatar = ?
             WHERE user_id = ?");
             
         $stmt->execute([
@@ -34,6 +35,7 @@ if (isset($data['action']) && $data['action'] === 'save') {
             $data['passport']['favoriteProvince'] ?? '',
             json_encode($data['passport']['photos'] ?? []),
             json_encode($data['passport']['treasures'] ?? []),
+            $data['passport']['avatar'] ?? 'default',
             $userId
         ]);
 

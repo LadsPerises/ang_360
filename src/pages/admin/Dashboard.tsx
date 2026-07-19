@@ -1,11 +1,30 @@
-import { Eye, Map, Users, TrendingUp, ArrowUpRight, Camera } from 'lucide-react';
+import { Eye, Map, Users, TrendingUp, ArrowUpRight, Camera, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Dashboard() {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalTours: 32,
+    toursViews: 0
+  });
+
+  useEffect(() => {
+    fetch('/api/admin/stats.php')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setStats(data.stats);
+        }
+      })
+      .catch(err => console.error('Error fetching stats:', err));
+  }, []);
+
   const metrics = [
-    { title: 'Tours Visíveis', value: '6', icon: Map, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-    { title: 'Total de Visualizações', value: '24,592', icon: Eye, color: 'text-green-400', bg: 'bg-green-400/10' },
-    { title: 'Utilizadores Ativos', value: '1,284', icon: Users, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-    { title: 'Fotos Capturadas', value: '8,401', icon: Camera, color: 'text-secondary', bg: 'bg-secondary/10' },
+    { title: 'Tours Visíveis', value: stats.totalTours, icon: Map, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+    { title: 'Visualizações (Est.)', value: stats.toursViews, icon: Eye, color: 'text-green-400', bg: 'bg-green-400/10' },
+    { title: 'Utilizadores Registados', value: stats.totalUsers, icon: Users, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    { title: 'Utilizadores Ativos', value: stats.activeUsers, icon: CheckCircle, color: 'text-secondary', bg: 'bg-secondary/10' },
   ];
 
   return (

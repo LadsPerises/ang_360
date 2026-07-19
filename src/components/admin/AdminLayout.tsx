@@ -80,8 +80,12 @@ export default function AdminLayout() {
                 <p className="text-sm font-bold text-white group-hover:text-primary transition-colors">{user?.name ?? 'Admin'}</p>
                 <p className="text-xs text-white/50">{user?.role === 'SUPER_ADMIN' ? 'Super Administrador' : 'Administrador'}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white font-bold shadow-lg text-sm">
-                {user?.name?.split(' ').map(n => n[0]).slice(0,2).join('') ?? 'A'}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white font-bold shadow-lg text-sm overflow-hidden">
+                {user?.avatarUrl && user.avatarUrl.startsWith('/uploads/') ? (
+                  <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  user?.name?.split(' ').map(n => n[0]).slice(0,2).join('') ?? 'A'
+                )}
               </div>
             </div>
           </div>
