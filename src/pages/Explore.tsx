@@ -2,22 +2,31 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, X, Compass } from 'lucide-react';
 
-const PROVINCES = [
-  'Bengo', 'Benguela', 'Bié', 'Cabinda', 'Cuando Cubango',
-  'Cuanza Norte', 'Cuanza Sul', 'Cunene', 'Huambo', 'Huíla',
-  'Icolo e Bengo', 'Luanda', 'Lunda Norte', 'Lunda Sul',
-  'Malanje', 'Moxico', 'Moxico Leste', 'Namibe', 'Uíge', 'Zaire'
+import { PROVINCES_DATA } from '../data/provincesData';
+import { generateTourPlaceholder, generateProvincePlaceholder } from '../lib/provinceImage';
+
+const PROVINCES = PROVINCES_DATA.map(p => p.name);
+
+const SPECIFIC_TOURS = [
+  { id: '1', title: 'Fortaleza de São Miguel', province: 'Luanda', excerpt: 'Explore a história militar de Luanda nesta fortaleza icónica com vista para a baía.', image: '/assets/images/tours/tour_1_fortaleza.png' },
+  { id: '2', title: 'Praia da Caotinha', province: 'Benguela', excerpt: 'Águas cristalinas e areia dourada numa das praias mais bonitas do sul.', image: '/assets/images/tours/tour_2_caotinha.png' },
+  { id: '3', title: 'Serra da Leba', province: 'Huíla', excerpt: 'Uma estrada serpenteante pelas montanhas, uma obra-prima da engenharia e natureza.', image: '/assets/images/tours/tour_3_leba.png' },
+  { id: '4', title: 'Baía dos Tigres', province: 'Namibe', excerpt: 'Uma ilha fantasma engolida pelas areias do deserto do Namibe.', image: '/assets/images/tours/tour_4_tigres.png' },
+  { id: '5', title: 'Quedas de Kalandula', province: 'Malanje', excerpt: 'As segundas maiores quedas de água de África num cenário de tirar o fôlego.', image: '/assets/images/tours/tour_5_kalandula.png' },
+  { id: '6', title: 'Parque Nacional da Kissama', province: 'Bengo', excerpt: 'Safari virtual pela savana angolana para observar a vida selvagem.', image: '/assets/images/tours/tour_6_kissama.png' },
+  { id: '7', title: 'Cristo Rei', province: 'Huíla', excerpt: 'Monumento sobranceiro ao vale do Lubango.', image: '/assets/images/tours/tour_7_cristo.png' },
+  { id: '8', title: 'Ilha do Mussulo', province: 'Luanda', excerpt: 'Um paraíso de coqueiros e praias tranquilas perto da capital.', image: '/assets/images/tours/tour_8_mussulo.png' },
 ];
 
 const MOCK_TOURS = [
-  { id: '1', title: 'Fortaleza de São Miguel', province: 'Luanda', excerpt: 'Explore a história militar de Luanda nesta fortaleza icónica com vista para a baía.', image: 'https://images.unsplash.com/photo-1585464231875-d9ef1f5ad396?w=800&q=80' },
-  { id: '2', title: 'Praia da Caotinha', province: 'Benguela', excerpt: 'Águas cristalinas e areia dourada numa das praias mais bonitas do sul.', image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80' },
-  { id: '3', title: 'Serra da Leba', province: 'Huíla', excerpt: 'Uma estrada serpenteante pelas montanhas, uma obra-prima da engenharia e natureza.', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80' },
-  { id: '4', title: 'Baía dos Tigres', province: 'Namibe', excerpt: 'Uma ilha fantasma engolida pelas areias do deserto do Namibe.', image: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80' },
-  { id: '5', title: 'Quedas de Kalandula', province: 'Malanje', excerpt: 'As segundas maiores quedas de água de África num cenário de tirar o fôlego.', image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&q=80' },
-  { id: '6', title: 'Parque Nacional da Kissama', province: 'Bengo', excerpt: 'Safari virtual pela savana angolana para observar a vida selvagem.', image: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800&q=80' },
-  { id: '7', title: 'Cristo Rei', province: 'Huíla', excerpt: 'Monumento sobranceiro ao vale do Lubango.', image: 'https://images.unsplash.com/photo-1489493887464-892be6d1daae?w=800&q=80' },
-  { id: '8', title: 'Ilha do Mussulo', province: 'Luanda', excerpt: 'Um paraíso de coqueiros e praias tranquilas perto da capital.', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80' },
+  ...SPECIFIC_TOURS,
+  ...PROVINCES_DATA.filter(p => !SPECIFIC_TOURS.some(t => t.province === p.name)).map((p, idx) => ({
+    id: `gen-${idx}`,
+    title: `Descubra ${p.name}`,
+    province: p.name,
+    excerpt: p.description || `Explore as belezas naturais e culturais da província de ${p.name}.`,
+    image: p.image
+  }))
 ];
 
 export default function Explore() {
@@ -50,9 +59,9 @@ export default function Explore() {
       <header className="relative py-32 px-6 flex flex-col items-center justify-center text-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/60 z-10" />
-          <img 
-            src="https://images.unsplash.com/photo-1489493887464-892be6d1daae?q=80&w=2667&auto=format&fit=crop" 
-            alt="Explore Header" 
+          <img
+            src="/assets/images/explore_header.png"
+            alt="Explore Header"
             className="w-full h-full object-cover"
           />
         </div>

@@ -1,13 +1,9 @@
 import { useState } from 'react';
 import { Camera, MapPin, Calendar, Award, Image as ImageIcon, Heart, Flag, Search, Trash2, Edit2, Check } from 'lucide-react';
 import { usePassportStore, MISSIONS_CATALOG } from '../store/usePassportStore';
+import { PROVINCES_DATA } from '../data/provincesData';
 
-const PROVINCES = [
-  'Bengo', 'Benguela', 'Bié', 'Cabinda', 'Cuando Cubango',
-  'Cuanza Norte', 'Cuanza Sul', 'Cunene', 'Huambo', 'Huíla',
-  'Icolo e Bengo', 'Luanda', 'Lunda Norte', 'Lunda Sul',
-  'Malanje', 'Moxico', 'Moxico Leste', 'Namibe', 'Uíge', 'Zaire'
-];
+const PROVINCES = PROVINCES_DATA.map(p => p.name);
 
 export default function Passport() {
   const { 
@@ -132,15 +128,26 @@ export default function Passport() {
               {PROVINCES.map(prov => {
                 const isUnlocked = stamps.includes(prov);
                 const isWishlist = wishlist.includes(prov);
+                const provinceData = PROVINCES_DATA.find(p => p.name === prov);
                 return (
-                  <div key={prov} className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center p-2 text-center transition-all ${isUnlocked ? 'bg-primary/20 border-2 border-primary shadow-[0_0_15px_rgba(214,38,38,0.3)]' : 'bg-black/40 border border-dashed border-white/20 opacity-60'}`}>
-                    {isUnlocked ? (
-                      <MapPin className="text-primary mb-2" size={28} />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-white/5 mb-2" />
+                  <div key={prov} className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center p-2 text-center transition-all overflow-hidden ${isUnlocked ? 'border-2 border-primary shadow-[0_0_15px_rgba(214,38,38,0.3)]' : 'border border-dashed border-white/20 opacity-60'}`}>
+                    {/* Background Image */}
+                    {provinceData && (
+                      <div className="absolute inset-0 z-0">
+                        <img src={provinceData.image} alt={prov} className="w-full h-full object-cover opacity-30" />
+                        <div className={`absolute inset-0 ${isUnlocked ? 'bg-primary/20' : 'bg-black/60 backdrop-blur-[2px]'}`}></div>
+                      </div>
                     )}
-                    <span className="text-xs font-bold leading-tight">{prov}</span>
-                    <button onClick={() => toggleWishlist(prov)} className={`absolute top-1 right-1 p-1 rounded-full ${isWishlist ? 'text-secondary' : 'text-white/20 hover:text-white/60'}`}>
+                    
+                    <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
+                      {isUnlocked ? (
+                        <MapPin className="text-primary mb-2 drop-shadow-md" size={28} />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md mb-2 border border-white/5" />
+                      )}
+                      <span className="text-xs font-bold leading-tight drop-shadow-md">{prov}</span>
+                    </div>
+                    <button onClick={() => toggleWishlist(prov)} className={`absolute top-1 right-1 p-1 rounded-full z-20 ${isWishlist ? 'text-secondary' : 'text-white/40 hover:text-white/80'} bg-black/20 backdrop-blur-md`}>
                       <Heart size={14} fill={isWishlist ? 'currentColor' : 'none'} />
                     </button>
                   </div>

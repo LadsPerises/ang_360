@@ -48,6 +48,8 @@ interface PassportState {
   collectTreasure: (label: string) => void;
   checkMissions: () => void;
   resetProgress: () => void;
+  syncWithServer: () => Promise<void>;
+  loadFromServer: (userId: string) => Promise<void>;
 }
 
 const calculateLevel = (stampsCount: number, missionsCount: number) => {
@@ -106,22 +108,28 @@ export const usePassportStore = create<PassportState>()(
       },
 
       checkMissions: () => {
-        const { stamps, photos, treasures, completedMissions } = get();
-        const newCompleted = new Set(completedMissions);
+        const state = get();
+        const { stamps, photos, treasures, completedMissions } = state;
+        let newCompleted = [...completedMissions];
 
-        if (stamps.length >= 1) newCompleted.add('first_step');
-        if (stamps.length >= 21) newCompleted.add('national_route');
-        if (photos.length >= 1) newCompleted.add('angle_perfect');
-        if (treasures.length >= 1) newCompleted.add('treasure_hunter');
+        MISSIONS_CATALOG.forEach(mission => {
+          if (!newCompleted.includes(mission.id)) {
+            let completed = false;
+            if (mission.id === 'first_step' && stamps.length >= 1) completed = true;
+            if (mission.id === 'angle_perfect' && photos.length >= 1) completed = true;
+            if (mission.id === 'treasure_hunter' && treasures.length >= 1) completed = true;
+            if (mission.id === 'national_route' && stamps.length >= 21) completed = true;
 
-        const newCompletedArray = Array.from(newCompleted);
-        
-        if (newCompletedArray.length !== completedMissions.length || get().level !== calculateLevel(stamps.length, newCompletedArray.length)) {
-          set({ 
-            completedMissions: newCompletedArray,
-            level: calculateLevel(stamps.length, newCompletedArray.length)
-          });
+            if (completed) newCompleted.push(mission.id);
+          }
+        });
+
+        if (newCompleted.length !== completedMissions.length) {
+          const newLevel = calculateLevel(stamps.length, newCompleted.length);
+          set({ completedMissions: newCompleted, level: newLevel });
         }
+        
+        get().syncWithServer();
       },
 
       resetProgress: () => set({
@@ -133,7 +141,67 @@ export const usePassportStore = create<PassportState>()(
         completedMissions: [],
         level: 'Novato',
         favoriteProvince: ''
-      })
+      }),
+
+      syncWithServer: async () => {
+        if (import.meta.env.DEV) return;
+        try {
+          // Precisamos do ID do utilizador (poderia vir de uma store partilhada, mas para simplicidade no React, pegamos do localStorage)
+          const authData = localStorage.getItem('angola360_user_auth');
+          if (!authData) return;
+          const parsed = JSON.parse(authData);
+          const userId = parsed?.state?.user?.id;
+          if (!userId) return;
+
+          const state = get();
+          await fetch('/api/sync_passport.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              action: 'save',
+              passport: {
+                level: state.level,
+                stamps: state.stamps,
+                mileage: state.mileage,
+                wishlist: state.wishlist,
+                completedMissions: state.completedMissions,
+                favoriteProvince: state.favoriteProvince,
+                photos: state.photos,
+                treasures: state.treasures
+              }
+            })
+          });
+        } catch (err) {
+          console.error('Falha ao sincronizar passaporte:', err);
+        }
+      },
+
+      loadFromServer: async (userId: string) => {
+        if (import.meta.env.DEV) return;
+        try {
+          const res = await fetch('/api/sync_passport.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+          });
+          const data = await res.json();
+          if (data.success && data.passport) {
+            set({
+              level: data.passport.level || 'Novato',
+              stamps: data.passport.stamps || [],
+              mileage: data.passport.mileage || 0,
+              wishlist: data.passport.wishlist || [],
+              completedMissions: data.passport.completedMissions || [],
+              favoriteProvince: data.passport.favoriteProvince || '',
+              photos: data.passport.photos || [],
+              treasures: data.passport.treasures || []
+            });
+          }
+        } catch (err) {
+          console.error('Falha ao carregar passaporte:', err);
+        }
+      }
     }),
     {
       name: 'angola360-passport-storage', // saves to localStorage automatically

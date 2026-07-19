@@ -1,0 +1,16 @@
+const fs = require('fs');
+const path = require('path');
+
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#1a1a1a" />
+  <g transform="translate(400, 250)">
+    <path d="M-40,0 L-40,-30 A40,40 0 0,1 40,-30 L40,0" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.3" />
+    <rect x="-60" y="0" width="120" height="100" rx="16" fill="#ffffff" opacity="0.3" />
+    <circle cx="0" cy="40" r="12" fill="#1a1a1a" opacity="0.8" />
+    <path d="M0,40 L0,70" stroke="#1a1a1a" stroke-width="8" stroke-linecap="round" opacity="0.8" />
+  </g>
+  <text x="400" y="420" font-family="sans-serif" font-size="48" font-weight="bold" fill="#ffffff" text-anchor="middle" opacity="0.5">Brevemente</text>
+</svg>`;
+
+fs.writeFileSync(path.join('public', 'assets', 'images', 'brevemente.svg'), svg);
+console.log('done');

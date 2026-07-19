@@ -1,4 +1,5 @@
 import { Eye, Heart, Users } from 'lucide-react';
+import { generateProvincePlaceholder } from '../lib/provinceImage';
 
 export default function AboutUs() {
   return (
@@ -7,9 +8,9 @@ export default function AboutUs() {
       <section className="relative py-32 px-6 flex flex-col items-center justify-center text-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/70 z-10" />
-          <img 
-            src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=80" 
-            alt="About Us Background" 
+          <img
+            src={generateProvincePlaceholder('A Nossa História', 1920, 1080)}
+            alt="About Us Background"
             className="w-full h-full object-cover grayscale opacity-50"
           />
         </div>
@@ -50,9 +51,9 @@ export default function AboutUs() {
       {/* Team Photo */}
       <section className="max-w-6xl mx-auto px-6 mt-16 md:mt-24">
         <div className="relative rounded-3xl overflow-hidden aspect-[21/9] group">
-          <img 
-            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80" 
-            alt="A Equipa Angola 360" 
+          <img
+            src={generateProvincePlaceholder('Equipa Angola360', 1200, 800)}
+            alt="A Equipa Angola 360"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center p-8">
