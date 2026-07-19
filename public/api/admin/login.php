@@ -27,8 +27,14 @@ if (empty($data['email']) || empty($data['password'])) {
 $email = trim((string) $data['email']);
 $password = (string) $data['password'];
 
+if ($email === '' || $password === '') {
+    fail('Preencha email e senha.');
+}
+
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    fail('Email inválido.');
+    // Diagnosticar: mostrar o que recebeu (truncado) para o utilizador perceber
+    $preview = mb_substr($email, 0, 60);
+    fail("Email com formato inválido: '$preview'");
 }
 
 try {
