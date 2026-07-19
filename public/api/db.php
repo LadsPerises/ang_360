@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $host = 'localhost'; // Normalmente na Hostinger é localhost
 $db_name = 'u144936411_angola360_'; // Nome da base de dados que criaste
-$user = 'u144936411_lauzen'; // Nome do utilizador que criaste
+$user = 'u144936411_lauzen_360'; // Nome do utilizador que criaste
 $password = 'Naruto_u144936411_WQh3j'; // Substitui pela senha que colocaste na Hostinger
 
 try {
