@@ -42,8 +42,10 @@ const API = {
     }),
   logout: () =>
     fetch('/api/logout.php', { method: 'POST', credentials: 'include' }),
+  // 🛡️ Chama o me.php ADMIN — só responde 200 se for Admin/SUPER_ADMIN.
+  // Um User comum autenticado pelo /api/login.php recebe 401 aqui.
   me: () =>
-    fetch('/api/me.php', { credentials: 'include' }),
+    fetch('/api/admin/me.php', { credentials: 'include' }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,6 +129,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (!res.ok || !data.success) {
         return { success: false, error: data.error || 'Credenciais inválidas.' };
+      }
+      // 🛡️ Defense in depth: validar role antes de aceitar o user.
+      // O backend /api/admin/login.php já rejeita não-admins, mas se por
+      // algum motivo a role vier como 'User', recusamos aqui também.
+      const role = data.user?.role;
+      if (role !== 'Admin' && role !== 'SUPER_ADMIN') {
+        // Faz logout imediato para limpar qualquer sessão criada por engano
+        try { await API.logout(); } catch { /* ignore */ }
+        return { success: false, error: 'Esta conta não tem permissões de administrador.' };
       }
       setUser(data.user as AdminUser);
       return { success: true };
