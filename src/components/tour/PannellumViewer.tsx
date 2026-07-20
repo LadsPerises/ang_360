@@ -42,7 +42,7 @@ export default function PannellumViewer({
   author,
   pitch = 0,
   yaw = 0,
-  hfov = 85,
+  hfov = 100,
   autoLoad = true,
   autoRotate = -2,
   hotSpots = [],
@@ -78,9 +78,6 @@ export default function PannellumViewer({
       compass: false,
       showControls: false,
       hotSpots,
-      dynamic: true, // Evita a geração de mipmaps desfocados no WebGL em produção
-      haov: 360,
-      vaov: 180,
     };
 
     if (title) config.title = title;
