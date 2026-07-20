@@ -117,6 +117,19 @@ export default function PannellumViewer({
     };
   }, [image, autoLoad, autoRotate, pitch, yaw, hfov, hotSpots, title, author, onLoad]);
 
+  // Fix canvas resolution for HiDPI (Retina) screens to prevent blur
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const canvas = containerRef.current.querySelector('canvas');
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+    }
+  }, [isLoaded]);
+
   return (
     <div className="relative w-full h-full bg-black">
       <div 

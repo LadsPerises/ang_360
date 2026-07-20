@@ -34,3 +34,10 @@
     @apply bg-black/40 backdrop-blur-md border border-white/10;
   }
 }
+
+/* Pannellum 360 canvas - forçar nitidez máxima */
+.pnlm-render-container canvas {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
