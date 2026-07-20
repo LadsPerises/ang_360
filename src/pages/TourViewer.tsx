@@ -1,16 +1,18 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Camera, Volume2, Info, MapPin, Calendar, User, Leaf, HelpCircle, ArrowLeft, CheckCircle, Maximize, Minimize } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Camera, Volume2, MapPin, Compass, User, Settings, ArrowLeft, Map, HelpCircle, CheckCircle } from 'lucide-react';
 import { usePassportStore } from '../store/usePassportStore';
 import PannellumViewer from '../components/tour/PannellumViewer';
 
 export default function TourViewer() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const unlockStamp = usePassportStore(state => state.unlockStamp);
   const addPhoto = usePassportStore(state => state.addPhoto);
   
   const [showPhotoAlert, setShowPhotoAlert] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showMission, setShowMission] = useState(false);
   const viewerContainerRef = useRef<HTMLDivElement>(null);
 
   const toggleFullscreen = () => {
@@ -33,67 +35,46 @@ export default function TourViewer() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-
-
   // Base de dados simulada para as Tours 360
   const toursData: Record<string, any> = {
-    'luanda': {
-      title: 'Baía de Luanda',
-      province: 'Luanda',
+    '1': {
+      title: 'BAÍA DE LUANDA',
+      province: 'LUANDA',
       author: 'Google Street View',
-      date: 'Maio 2026',
-      bestTime: 'Todo o ano',
-      highlights: ['Marginal de Luanda', 'Vista para a Ilha', 'Pôr do sol no mar'],
-      description: 'A vibrante capital de Angola oferece uma mistura incrível de arquitetura moderna e edifícios coloniais históricos à beira-mar.',
+      elevation: '4m',
       image: 'https://pannellum.org/images/alma.jpg',
       quiz: { question: 'Qual é o nome da fortaleza icónica de Luanda?', answers: ['São Miguel', 'São Pedro', 'Kikombo', 'Muxima'] },
       hotspots: [{ pitch: -5, yaw: 110, type: 'info', text: 'Marginal de Luanda' }]
     },
-    'benguela': {
-      title: 'Praia Morena',
-      province: 'Benguela',
+    '2': {
+      title: 'PRAIA MORENA',
+      province: 'BENGUELA',
       author: 'Google Street View',
-      date: 'Dezembro 2025',
-      bestTime: 'Novembro a Março',
-      highlights: ['Areias Brancas', 'Restaurantes Locais', 'Mar Calmo'],
-      description: 'Conhecida pelas suas praias maravilhosas, Benguela é um dos destinos turísticos mais procurados para quem gosta de mar e sol.',
+      elevation: '2m',
       image: 'https://pannellum.org/images/cerro-toco-0.jpg',
-      quiz: { question: 'Que comboio famoso tem a sua estação central em Benguela?', answers: ['Caminho de Ferro de Benguela', 'Linha de Luanda', 'Comboio do Namibe', 'Expresso do Sul'] },
+      quiz: { question: 'Que comboio famoso tem a sua estação central em Benguela?', answers: ['Caminho de Ferro de Benguela', 'Linha de Luanda'] },
       hotspots: [{ pitch: 0, yaw: -45, type: 'info', text: 'Areias Brancas' }]
     },
-    'huila': {
-      title: 'Fenda da Tundavala',
-      province: 'Huíla',
+    '3': {
+      title: 'FENDA DA TUNDAVALA',
+      province: 'HUÍLA',
       author: 'Google Street View',
-      date: 'Janeiro 2026',
-      bestTime: 'Maio a Setembro',
-      highlights: ['Abismo de 1200m', 'Vista Panorâmica', 'Formações Rochosas'],
-      description: 'Uma das maiores maravilhas naturais de Angola, oferecendo uma vista vertiginosa e inesquecível sobre o horizonte.',
+      elevation: '2200m',
       image: 'https://pannellum.org/images/jfk.jpg',
-      quiz: { question: 'A Fenda da Tundavala fica próxima de que cidade?', answers: ['Lubango', 'Matala', 'Namibe', 'Chibia'] }
+      quiz: { question: 'A Fenda da Tundavala fica próxima de que cidade?', answers: ['Lubango', 'Matala', 'Namibe'] }
     }
   };
 
-  // Obter dados específicos da província ou usar um "fallback" (padrão)
-  const currentTourId = id?.toLowerCase() || 'luanda';
-  const displayId = id || 'luanda';
+  const currentTourId = id?.toLowerCase() || '1';
   const tour = toursData[currentTourId] || {
-    title: displayId.charAt(0).toUpperCase() + displayId.slice(1),
-    province: displayId.charAt(0).toUpperCase() + displayId.slice(1),
-    author: 'Equipa Angola360',
-    date: 'Brevemente',
-    bestTime: 'Maio a Setembro',
-    highlights: ['Cultura Local', 'Paisagem Única', 'Gastronomia'],
-    description: 'Estamos a preparar a experiência 360º para esta província. Volte em breve para explorar este destino!',
-    image: 'https://pannellum.org/images/alma.jpg', // Placeholder de teste
-    quiz: {
-      question: 'Qual é a capital desta província?',
-      answers: ['Luanda', 'Benguela', 'Huambo', 'Lubango']
-    },
-    hotSpots: []
+    title: 'DESTINO DESCONHECIDO',
+    province: 'ANGOLA',
+    elevation: '120m',
+    image: 'https://pannellum.org/images/alma.jpg',
+    quiz: { question: 'Qual é a capital desta província?', answers: ['Luanda', 'Benguela'] },
+    hotspots: []
   };
 
-  // Gamification: Unlock stamp on visit
   useEffect(() => {
     if (tour.province) {
       unlockStamp(tour.province);
@@ -107,162 +88,140 @@ export default function TourViewer() {
   };
 
   return (
-    <div className="flex-1 w-full bg-dark-bg">
+    <div ref={viewerContainerRef} className="fixed inset-0 z-[100] bg-black overflow-hidden font-sans">
       
-      {/* 1. Header do Tour */}
-      <header className="px-6 pt-32 pb-8 max-w-7xl mx-auto relative z-10">
-        <Link to="/explore" className="text-text-muted hover:text-white flex items-center gap-2 mb-6 w-fit transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full text-sm font-medium border border-white/5">
-          <ArrowLeft size={16} /> Voltar aos destinos
-        </Link>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 text-sm font-bold tracking-widest uppercase mb-3">
-              <span className="text-white/50">Angola</span>
-              <span className="text-white/20">•</span>
-              <span className="text-primary">{tour.province}</span>
-              <span className="text-white/20">•</span>
-              <span className="bg-secondary/20 text-secondary px-3 py-1 rounded-md border border-secondary/20 shadow-[0_0_10px_rgba(255,215,0,0.1)]">Património</span>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black text-white drop-shadow-lg tracking-tight">{tour.title}</h1>
-          </div>
-
-        </div>
-      </header>
-
-      {/* 2. Área de Mídia (Viewer Box) */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 mb-16">
-        <div ref={viewerContainerRef} className={`relative w-full bg-black overflow-hidden group ${isFullscreen ? 'h-screen rounded-none' : 'h-[65vh] md:h-[80vh] rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10'}`}>
-          
-          {/* Pannellum 360 Viewer */}
-          <PannellumViewer 
-            image={tour.image} 
-            title={tour.title}
-            author={tour.author}
-            hotSpots={tour.hotspots || []}
-          />
-          
-          {/* Alertas Superiores */}
-          <div className="absolute top-6 left-6 flex flex-col gap-3 z-10 pointer-events-none">
-            {showPhotoAlert && (
-              <div className="bg-secondary text-black px-5 py-2.5 rounded-full flex items-center gap-2 text-xs font-bold animate-bounce shadow-[0_0_20px_rgba(255,215,0,0.3)]">
-                <CheckCircle size={16} /> Foto guardada no diário!
-              </div>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="absolute top-6 right-6 flex flex-col gap-3 z-10">
-            <button onClick={handleTakePhoto} className="bg-black/50 backdrop-blur-md border border-white/10 p-3.5 rounded-full hover:bg-primary transition-all group/btn shadow-lg" title="Tirar Foto para o Diário">
-              <Camera size={22} className="text-white group-hover/btn:scale-110 transition-transform" />
-            </button>
-            <button className="bg-black/50 backdrop-blur-md border border-white/10 p-3.5 rounded-full hover:bg-secondary hover:text-black transition-all group/btn shadow-lg text-white" title="Áudio Guia">
-              <Volume2 size={22} className="group-hover/btn:scale-110 transition-transform" />
-            </button>
-            <button onClick={toggleFullscreen} className="bg-black/50 backdrop-blur-md border border-white/10 p-3.5 rounded-full hover:bg-white/20 transition-all group/btn shadow-lg text-white mt-4" title={isFullscreen ? "Sair do Modo Ecrã Inteiro" : "Ecrã Inteiro"}>
-              {isFullscreen ? <Minimize size={22} className="group-hover/btn:scale-110 transition-transform" /> : <Maximize size={22} className="group-hover/btn:scale-110 transition-transform" />}
-            </button>
-          </div>
-
-
-
-          {/* Instructions */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-8 py-3 rounded-full text-sm font-medium text-white/90 pointer-events-none z-10 flex items-center gap-3 border border-white/10 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <span className="w-2 h-2 rounded-full bg-white/50 animate-pulse"></span>
-            Arraste para explorar o ambiente
-          </div>
-        </div>
+      {/* 360 Viewer Layer (Bottom most) */}
+      <div className="absolute inset-0 w-full h-full">
+        <PannellumViewer 
+          image={tour.image} 
+          title={tour.title}
+          author={tour.author}
+          hotSpots={tour.hotspots || []}
+        />
       </div>
 
-      {/* 3. Grid de Conteúdo */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+      {/* Left Navigation Sidebar */}
+      <div className="absolute top-0 left-0 h-full w-20 md:w-24 bg-black/60 backdrop-blur-xl border-r border-white/10 flex flex-col items-center justify-between py-8 z-20">
         
-        {/* Coluna Principal (Texto e Destaques) */}
-        <div className="lg:col-span-8 space-y-12">
-          
-          <section className="glass p-8 md:p-10 rounded-3xl border border-white/5">
-            <h2 className="text-3xl font-bold mb-6 flex items-center gap-3 text-white">
-              <Info className="text-primary" size={28} /> Sobre este destino
-            </h2>
-            <p className="text-lg text-white/70 leading-relaxed font-light">
-              {tour.description}
-            </p>
-          </section>
+        {/* Brand/Logo Area */}
+        <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="text-primary font-black text-2xl tracking-tighter">A<span className="text-white">360</span></div>
+          <span className="text-[9px] font-bold text-white/50 tracking-widest">VR</span>
+        </div>
 
-          <div className="grid sm:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 p-8 rounded-3xl hover:border-white/20 transition-colors">
-              <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-6 border border-primary/30">
-                <Leaf className="text-primary" size={24} />
-              </div>
-              <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">O que faz este lugar especial</h4>
-              <ul className="space-y-3">
-                {tour.highlights.map((h: string, i: number) => (
-                  <li key={i} className="flex items-start gap-3 text-white/80 font-medium">
-                    <CheckCircle className="text-secondary shrink-0 mt-0.5" size={18} /> {h}
-                  </li>
-                ))}
-              </ul>
+        {/* Center Icons */}
+        <div className="flex flex-col gap-10">
+          <Link to="/explore" className="flex flex-col items-center gap-2 group">
+            <Compass size={24} className="text-primary group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] text-primary font-bold">Explorar</span>
+          </Link>
+          <button className="flex flex-col items-center gap-2 group opacity-50 hover:opacity-100 transition-opacity">
+            <Map size={24} className="text-white group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] text-white font-medium">Mapa</span>
+          </button>
+          <Link to="/explore" className="flex flex-col items-center gap-2 group opacity-50 hover:opacity-100 transition-opacity">
+            <MapPin size={24} className="text-white group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] text-white font-medium">Destinos</span>
+          </Link>
+          <Link to="/passport" className="flex flex-col items-center gap-2 group opacity-50 hover:opacity-100 transition-opacity">
+            <User size={24} className="text-white group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] text-white font-medium">Perfil</span>
+          </Link>
+          <button className="flex flex-col items-center gap-2 group opacity-50 hover:opacity-100 transition-opacity">
+            <Settings size={24} className="text-white group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] text-white font-medium">Definições</span>
+          </button>
+        </div>
+
+        {/* Bottom Back Button */}
+        <button onClick={() => navigate(-1)} className="p-3 bg-white/5 hover:bg-white/20 rounded-full transition-colors" title="Voltar">
+          <ArrowLeft size={20} className="text-white" />
+        </button>
+      </div>
+
+      {/* Top Left Information Overlay */}
+      <div className="absolute top-10 left-28 md:left-36 z-20 pointer-events-none">
+        <div className="text-white/70 text-sm font-medium tracking-[0.2em] uppercase mb-2">Angola360 VR</div>
+        <h1 className="text-4xl md:text-5xl font-black text-white drop-shadow-xl uppercase max-w-2xl leading-tight">
+          {tour.province}:<br />{tour.title}
+        </h1>
+        <div className="text-white/50 text-sm font-medium tracking-widest mt-3">IMERSÃO 360°</div>
+      </div>
+
+      {/* Photo Alert Toast */}
+      {showPhotoAlert && (
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 z-30 bg-primary/20 backdrop-blur-md border border-primary/50 text-white px-6 py-3 rounded-full flex items-center gap-3 text-sm font-bold shadow-[0_0_30px_rgba(214,38,38,0.4)] animate-fade-in-down">
+          <CheckCircle size={18} className="text-primary" /> Captura Guardada no Passaporte!
+        </div>
+      )}
+
+      {/* Bottom Center Console (Pill) */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
+        <div className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] px-8 py-5 flex items-center gap-8 shadow-2xl">
+          
+          {/* Location Info */}
+          <div className="flex flex-col border-r border-white/10 pr-8 min-w-[200px]">
+            <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Localização Atual</span>
+            <span className="text-white font-bold text-lg leading-none mb-1">{tour.title}</span>
+            <span className="text-white/40 text-[10px]">Lat: -12.3847° / Lng: 17.5830°</span>
+          </div>
+
+          <div className="flex flex-col border-r border-white/10 pr-8">
+            <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Altitude</span>
+            <span className="text-white font-bold text-lg">{tour.elevation}</span>
+          </div>
+
+          {/* Action Controls */}
+          <div className="flex items-center gap-4">
+            <button onClick={handleTakePhoto} className="w-12 h-12 bg-white/10 hover:bg-primary border border-white/20 hover:border-primary rounded-full flex items-center justify-center transition-all group" title="Tirar Foto">
+              <Camera size={20} className="text-white group-hover:scale-110 transition-transform" />
+            </button>
+            <button className="w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center transition-all group" title="Áudio Guia">
+              <Volume2 size={20} className="text-white group-hover:scale-110 transition-transform" />
+            </button>
+            <button onClick={() => setShowMission(!showMission)} className={`w-12 h-12 border rounded-full flex items-center justify-center transition-all group ${showMission ? 'bg-secondary border-secondary text-black' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`} title="Missão Local">
+              <HelpCircle size={20} className="group-hover:scale-110 transition-transform" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side Panels */}
+      <div className="absolute bottom-8 right-8 z-20 flex flex-col items-end gap-4">
+        
+        {/* VR/Fullscreen Mode Toggle */}
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+          <span className="text-[10px] font-bold text-white/70 tracking-widest uppercase">Ecrã Inteiro</span>
+          <button 
+            onClick={toggleFullscreen}
+            className={`w-14 h-7 rounded-full p-1 transition-colors relative flex items-center ${isFullscreen ? 'bg-blue-500' : 'bg-white/20'}`}
+          >
+            <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${isFullscreen ? 'translate-x-7' : 'translate-x-0'}`} />
+          </button>
+        </div>
+
+        {/* Interactive Mission Panel (Only shows when toggled from bottom bar) */}
+        <div className={`transition-all duration-500 origin-bottom-right ${showMission ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}>
+          <div className="w-80 bg-black/60 backdrop-blur-2xl border border-secondary/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 text-secondary/10">
+              <HelpCircle size={100} />
             </div>
-            
-            {/* Quiz Card */}
-            <div className="bg-gradient-to-br from-secondary/10 via-secondary/5 to-transparent border border-secondary/20 p-8 rounded-3xl relative overflow-hidden group">
-              <div className="absolute -right-8 -top-8 text-secondary/5 rotate-12 group-hover:rotate-45 transition-transform duration-700">
-                <HelpCircle size={160} />
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 text-secondary font-black text-xs uppercase tracking-widest mb-4 bg-secondary/10 w-fit px-3 py-1.5 rounded-lg border border-secondary/20">
-                  <HelpCircle size={14} /> Missão de Conhecimento
-                </div>
-                <h3 className="text-xl font-bold text-white mb-6 leading-tight">{tour.quiz.question}</h3>
-                <div className="flex flex-col gap-2.5">
-                  {tour.quiz.answers.map((answer: string, i: number) => (
-                    <label key={i} className="flex items-center gap-3 bg-black/40 hover:bg-secondary/20 border border-white/5 hover:border-secondary/50 p-3.5 rounded-xl cursor-pointer transition-all">
-                      <input type="radio" name="quiz" className="text-secondary focus:ring-secondary accent-secondary w-4 h-4" />
-                      <span className="text-white/90 font-medium text-sm">{answer}</span>
-                    </label>
-                  ))}
-                </div>
-                <button className="mt-6 w-full bg-secondary hover:bg-[#ffe033] text-black py-3.5 rounded-xl font-bold transition-transform active:scale-95 shadow-[0_0_15px_rgba(255,215,0,0.2)]">
-                  Validar Resposta
-                </button>
+            <div className="relative z-10">
+              <span className="text-[10px] font-bold text-secondary tracking-widest uppercase block mb-2">Missão de Conhecimento</span>
+              <h3 className="text-lg font-bold text-white mb-4 leading-snug">{tour.quiz.question}</h3>
+              <div className="flex flex-col gap-2">
+                {tour.quiz.answers.map((answer: string, i: number) => (
+                  <button key={i} className="text-left bg-white/5 hover:bg-secondary/20 border border-white/10 hover:border-secondary/50 px-4 py-2.5 rounded-xl text-sm text-white/90 font-medium transition-colors">
+                    {answer}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Coluna Lateral (Ficha Técnica) */}
-        <aside className="lg:col-span-4">
-          <div className="glass p-8 rounded-3xl sticky top-32 border border-white/5 shadow-2xl">
-            <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
-              <MapPin className="text-primary" /> Dados da Viagem
-            </h3>
-            
-            <div className="space-y-6 mb-10">
-              <div className="flex items-center gap-4 p-4 rounded-2xl bg-black/20 border border-white/5">
-                <div className="bg-white/10 p-3 rounded-xl"><User size={20} className="text-white" /></div>
-                <div>
-                  <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Fotografia / Autor</span>
-                  <span className="text-white font-bold">{tour.author}</span>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4 p-4 rounded-2xl bg-black/20 border border-white/5">
-                <div className="bg-white/10 p-3 rounded-xl"><Calendar size={20} className="text-white" /></div>
-                <div>
-                  <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Data de Captura</span>
-                  <span className="text-white font-bold">{tour.date}</span>
-                </div>
-              </div>
-              
-
-            </div>
-
-            <Link to="/explore" className="flex items-center justify-center gap-2 w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 py-4 rounded-2xl font-bold transition-all hover:scale-[1.02]">
-              Explorar Mais Destinos <ArrowLeft size={18} className="rotate-180" />
-            </Link>
-          </div>
-        </aside>
-
       </div>
+
     </div>
   );
 }

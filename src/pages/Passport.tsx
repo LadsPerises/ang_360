@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Calendar, Flag, Search, Trash2, Edit2, Check, Book, User } from 'lucide-react';
+import { MapPin, Calendar, Flag, Search, Trash2, Edit2, Check, Book, User, Camera, Trophy, Globe, ArrowRight } from 'lucide-react';
 import { usePassportStore, MISSIONS_CATALOG } from '../store/usePassportStore';
 import { useUserAuthStore } from '../store/useUserAuthStore';
 import { PROVINCES_DATA } from '../data/provincesData';
@@ -56,27 +56,103 @@ export default function Passport() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex-1 w-full max-w-4xl mx-auto p-6 lg:p-12 flex flex-col items-center justify-center min-h-[60vh] relative pt-32">
-        {/* Background glow indicators */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
-        
-        <div className="glass p-8 md:p-12 rounded-3xl border border-white/10 text-center max-w-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] bg-gradient-to-b from-white/5 to-transparent relative z-10">
-          <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 text-primary">
-            <Book size={32} />
+      <div className="flex-1 w-full relative pb-24">
+        {/* Background elements */}
+        <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-primary/10 via-dark-bg to-dark-bg pointer-events-none" />
+        <div className="absolute top-32 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-6xl mx-auto px-6 lg:px-12 pt-32 lg:pt-40 relative z-10">
+          
+          {/* Hero Section */}
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <div className="inline-flex items-center justify-center p-4 bg-primary/10 border border-primary/20 rounded-full mb-6">
+              <Book size={32} className="text-primary" />
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight mb-6 leading-tight drop-shadow-xl">
+              O Teu Passaporte Para Uma <span className="text-primary">Angola Inexplorada</span>
+            </h1>
+            <p className="text-lg md:text-xl text-white/70 leading-relaxed mb-10">
+              Muito mais do que um simples registo. O Passaporte Angola360 é a tua identidade de explorador virtual. Coleciona carimbos, desbloqueia missões interativas e guarda as tuas melhores memórias.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => setIsLoginOpen(true)}
+                className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-[0_0_20px_rgba(214,38,38,0.3)] hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <User size={20} />
+                Criar Conta de Explorador
+              </button>
+              <a href="#features" className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-full font-bold text-lg transition-all flex items-center justify-center gap-2">
+                Saber Mais
+              </a>
+            </div>
           </div>
-          
-          <h2 className="text-3xl font-black text-white mb-4 tracking-tight">O Teu Passaporte de Explorador Espera Por Ti</h2>
-          <p className="text-sm text-white/60 leading-relaxed mb-8">
-            O Passaporte é a sua identidade exclusiva de membro do Angola360. Faça login ou crie uma conta para colecionar carimbos ao visitar as províncias, acumular quilómetros virtuais, encontrar tesouros históricos e partilhar a sua jornada com o mundo.
-          </p>
-          
-          <button
-            onClick={() => setIsLoginOpen(true)}
-            className="w-full bg-primary hover:bg-primary/95 text-white py-4 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(214,38,38,0.3)] hover:scale-[1.02] flex items-center justify-center gap-2"
-          >
-            <User size={20} />
-            Entrar ou Criar Conta
-          </button>
+
+          {/* Features Grid */}
+          <div id="features" className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-24">
+            <div className="glass rounded-3xl border border-white/5 bg-gradient-to-br from-white/5 to-transparent hover:border-white/20 transition-all hover:-translate-y-1 overflow-hidden">
+              <div className="w-full h-48 bg-black/50 relative overflow-hidden">
+                <img src="/images/features/explore.png" alt="Exploração" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="p-8">
+                <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mb-6 -mt-14 relative z-10 backdrop-blur-md">
+                  <Globe className="text-blue-400" size={24} />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Exploração com Propósito</h3>
+                <p className="text-white/60 leading-relaxed">
+                  Cada província que visitas nas nossas tours imersivas 360º dá-te um carimbo único. O teu objetivo? Colecionar os 21 carimbos nacionais.
+                </p>
+              </div>
+            </div>
+            
+            <div className="glass rounded-3xl border border-white/5 bg-gradient-to-br from-white/5 to-transparent hover:border-white/20 transition-all hover:-translate-y-1 overflow-hidden">
+              <div className="w-full h-48 bg-black/50 relative overflow-hidden">
+                <img src="/images/features/gamification.png" alt="Missões e Gamificação" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="p-8">
+                <div className="w-12 h-12 bg-secondary/10 border border-secondary/20 rounded-xl flex items-center justify-center mb-6 -mt-14 relative z-10 backdrop-blur-md">
+                  <Trophy className="text-secondary" size={24} />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Missões e Gamificação</h3>
+                <p className="text-white/60 leading-relaxed">
+                  Ganha pontos de experiência (XP) e desbloqueia níveis como "Viajante" e "Embaixador 360" ao encontrares tesouros escondidos nas tours.
+                </p>
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl border border-white/5 bg-gradient-to-br from-white/5 to-transparent hover:border-white/20 transition-all hover:-translate-y-1 overflow-hidden">
+              <div className="w-full h-48 bg-black/50 relative overflow-hidden">
+                <img src="/images/features/logbook.png" alt="Diário Pessoal" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="p-8">
+                <div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mb-6 -mt-14 relative z-10 backdrop-blur-md">
+                  <Camera className="text-purple-400" size={24} />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">O Teu Diário Pessoal</h3>
+                <p className="text-white/60 leading-relaxed">
+                  Usa a câmara virtual para capturar o ângulo perfeito durante a tua viagem. Guarda as fotos no teu diário e partilha o teu Bilhete de Explorador.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="glass p-10 md:p-16 rounded-3xl border border-white/10 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/10 rounded-full blur-[80px]" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px]" />
+            
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-6 relative z-10">Estás pronto para a viagem?</h2>
+            <p className="text-xl text-white/70 mb-10 max-w-2xl mx-auto relative z-10">
+              Junta-te a nós e começa a catalogar as tuas visitas virtuais pelo património deslumbrante de Angola. O registo é 100% gratuito.
+            </p>
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="bg-secondary hover:bg-[#ffe033] text-black px-10 py-5 rounded-full font-black text-lg transition-transform active:scale-95 shadow-[0_0_25px_rgba(255,215,0,0.3)] hover:scale-105 inline-flex items-center gap-3 relative z-10"
+            >
+              Começar a Explorar Agora <ArrowRight size={22} />
+            </button>
+          </div>
+
         </div>
 
         <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
@@ -85,7 +161,7 @@ export default function Passport() {
   }
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto p-6 lg:p-12 relative">
+    <div className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 pb-12 pt-32 lg:pt-40 relative">
       <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-8 relative z-10">
         
         {/* Sidebar / User Profile */}

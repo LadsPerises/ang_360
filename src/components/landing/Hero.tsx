@@ -72,25 +72,7 @@ export default function Hero() {
 
           </div>
 
-          {/* Right Column (Floating Premium Card) */}
-          <div className="lg:col-span-5 flex justify-center lg:justify-end items-center relative h-full">
-            
-            {/* The Floating stats card (like the mockup) */}
-            <div className="glass p-6 rounded-3xl w-full max-w-[280px] shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-white/10 bg-gradient-to-br from-white/5 to-transparent relative z-20 group hover:border-secondary/30 transition-all duration-500">
-              
-              {/* Small accent color blob */}
-              <div className="absolute top-0 right-0 w-16 h-16 bg-secondary/15 rounded-full blur-xl" />
-              
-              {/* Stat number */}
-              <h3 className="text-3xl font-black text-white mb-2">100% Gratuito</h3>
-              
-              {/* Label */}
-              <p className="text-xs text-white/70 leading-relaxed font-medium">
-                Acesso livre a todo o património histórico, natural e cultural de Angola. Sem custos, apenas descoberta.
-              </p>
 
-            </div>
-          </div>
 
         </div>
       </div>
