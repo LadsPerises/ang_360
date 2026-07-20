@@ -42,12 +42,13 @@ if (($data['action'] ?? null) === 'save') {
     $photos        = $asArr($p['photos'] ?? []);
     $treasures     = $asArr($p['treasures'] ?? []);
     $avatar        = $asStr($p['avatar'] ?? 'default', 'default');
+    $archetype     = $asStr($p['archetype'] ?? '', '');
 
     try {
         // Upsert: se não existir, cria
         $stmt = $pdo->prepare("
-            INSERT INTO passports (user_id, member_since, level, stamps, mileage, wishlist, completed_missions, favorite_province, photos, treasures, avatar)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO passports (user_id, member_since, level, stamps, mileage, wishlist, completed_missions, favorite_province, photos, treasures, avatar, archetype)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 level = VALUES(level),
                 stamps = VALUES(stamps),
@@ -57,12 +58,13 @@ if (($data['action'] ?? null) === 'save') {
                 favorite_province = VALUES(favorite_province),
                 photos = VALUES(photos),
                 treasures = VALUES(treasures),
-                avatar = VALUES(avatar)
+                avatar = VALUES(avatar),
+                archetype = VALUES(archetype)
         ");
         $stmt->execute([
             $userId,
             date('d/m/Y'),
-            $level, $stamps, $mileage, $wishlist, $missions, $favorite, $photos, $treasures, $avatar,
+            $level, $stamps, $mileage, $wishlist, $missions, $favorite, $photos, $treasures, $avatar, $archetype,
         ]);
 
         jsonResponse(['success' => true]);
@@ -80,8 +82,8 @@ try {
     if (!$passport) {
         // Cria um passaporte vazio para o utilizador se não existir
         $stmt = $pdo->prepare("
-            INSERT INTO passports (user_id, member_since, stamps, wishlist, completed_missions, photos, treasures, avatar)
-            VALUES (?, ?, '[]', '[]', '[]', '[]', '[]', 'default')
+            INSERT INTO passports (user_id, member_since, stamps, wishlist, completed_missions, photos, treasures, avatar, archetype)
+            VALUES (?, ?, '[]', '[]', '[]', '[]', '[]', 'default', '')
         ");
         $stmt->execute([$userId, date('d/m/Y')]);
         $passport = [
@@ -93,6 +95,7 @@ try {
             'photos'             => '[]',
             'treasures'          => '[]',
             'avatar'             => 'default',
+            'archetype'          => '',
         ];
     }
 
@@ -108,6 +111,7 @@ try {
             'photos'            => json_decode($passport['photos'] ?? '[]', true) ?: [],
             'treasures'         => json_decode($passport['treasures'] ?? '[]', true) ?: [],
             'avatar'            => $passport['avatar']             ?? 'default',
+            'archetype'         => $passport['archetype']            ?? '',
         ],
     ]);
 } catch (Throwable $e) {

@@ -1,22 +1,34 @@
-import { useState } from 'react';
-import { MapPin, Calendar, Flag, Search, Trash2, Edit2, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Calendar, Flag, Search, Trash2, Edit2, Check, Book, User } from 'lucide-react';
 import { usePassportStore, MISSIONS_CATALOG } from '../store/usePassportStore';
+import { useUserAuthStore } from '../store/useUserAuthStore';
 import { PROVINCES_DATA } from '../data/provincesData';
 import AvatarSelector from '../components/passport/AvatarSelector';
 import PassportBook from '../components/passport/PassportBook';
 import ShareCard from '../components/passport/ShareCard';
+import ArchetypeModal from '../components/passport/ArchetypeModal';
+import LoginModal from '../components/auth/LoginModal';
 
 const PROVINCES = PROVINCES_DATA.map(p => p.name);
 
 export default function Passport() {
   const {
     name, level, stamps, mileage, memberSince,
-    treasures, completedMissions, favoriteProvince,
+    treasures, completedMissions, favoriteProvince, archetype,
     setName, setFavoriteProvince, resetProgress
   } = usePassportStore();
 
+  const { isAuthenticated } = useUserAuthStore();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(name);
+  const [isArchetypeModalOpen, setIsArchetypeModalOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && !archetype) {
+      setIsArchetypeModalOpen(true);
+    }
+  }, [archetype, isAuthenticated]);
 
   const handleSaveName = () => {
     if (tempName.trim()) {
@@ -25,7 +37,52 @@ export default function Passport() {
     setIsEditingName(false);
   };
 
+  const getArchetypeDetails = () => {
+    switch (archetype) {
+      case 'Historiador':
+        return { label: 'Historiador', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40' };
+      case 'Aventureiro':
+        return { label: 'Aventureiro', color: 'text-red-400 bg-red-500/10 border-red-500/20 hover:border-red-500/40' };
+      case 'Amante da Natureza':
+        return { label: 'Amante da Natureza', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40' };
+      default:
+        return { label: 'Definir Perfil', color: 'text-white/40 bg-white/5 border-white/10 hover:border-white/30' };
+    }
+  };
+
+  const archDetails = getArchetypeDetails();
+
   const progressPercentage = Math.round((stamps.length / 21) * 100);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex-1 w-full max-w-4xl mx-auto p-6 lg:p-12 flex flex-col items-center justify-center min-h-[60vh] relative pt-32">
+        {/* Background glow indicators */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+        
+        <div className="glass p-8 md:p-12 rounded-3xl border border-white/10 text-center max-w-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] bg-gradient-to-b from-white/5 to-transparent relative z-10">
+          <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 text-primary">
+            <Book size={32} />
+          </div>
+          
+          <h2 className="text-3xl font-black text-white mb-4 tracking-tight">O Teu Passaporte de Explorador Espera Por Ti</h2>
+          <p className="text-sm text-white/60 leading-relaxed mb-8">
+            O Passaporte é a sua identidade exclusiva de membro do Angola360. Faça login ou crie uma conta para colecionar carimbos ao visitar as províncias, acumular quilómetros virtuais, encontrar tesouros históricos e partilhar a sua jornada com o mundo.
+          </p>
+          
+          <button
+            onClick={() => setIsLoginOpen(true)}
+            className="w-full bg-primary hover:bg-primary/95 text-white py-4 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(214,38,38,0.3)] hover:scale-[1.02] flex items-center justify-center gap-2"
+          >
+            <User size={20} />
+            Entrar ou Criar Conta
+          </button>
+        </div>
+
+        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-6 lg:p-12 relative">
@@ -59,7 +116,15 @@ export default function Passport() {
               </div>
             )}
             
-            <p className="text-secondary font-bold tracking-[0.2em] uppercase text-xs mt-1 bg-white/5 inline-block px-3 py-1 rounded-full border border-white/10 shadow-inner">{level}</p>
+            <div className="flex flex-col items-center gap-2 mt-3">
+              <p className="text-secondary font-bold tracking-[0.2em] uppercase text-xs bg-white/5 inline-block px-3 py-1 rounded-full border border-white/10 shadow-inner">{level}</p>
+              <button 
+                onClick={() => setIsArchetypeModalOpen(true)}
+                className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full border transition-all transform active:scale-95 cursor-pointer ${archDetails.color}`}
+              >
+                Perfil: {archDetails.label}
+              </button>
+            </div>
           </div>
 
           <div className="bg-black/20 rounded-2xl p-5 border border-white/5 shadow-inner">
@@ -209,6 +274,12 @@ export default function Passport() {
           </div>
         </main>
       </div>
+      
+      <ArchetypeModal 
+        isOpen={isArchetypeModalOpen} 
+        onClose={() => setIsArchetypeModalOpen(false)} 
+        canCloseWithoutSelecting={!!archetype} 
+      />
     </div>
   );
 }

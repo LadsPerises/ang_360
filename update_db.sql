@@ -1,4 +1,5 @@
 ALTER TABLE passports ADD COLUMN IF NOT EXISTS avatar VARCHAR(255) DEFAULT 'default';
+ALTER TABLE passports ADD COLUMN IF NOT EXISTS archetype VARCHAR(50) NOT NULL DEFAULT '';
 
 -- Novas colunas para a tabela users (Painel de Administração)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'User';

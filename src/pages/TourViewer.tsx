@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Camera, Volume2, Info, MapPin, Calendar, User, Eye, Leaf, Landmark, Utensils, HelpCircle, ArrowLeft, CheckCircle, Maximize, Minimize, Thermometer } from 'lucide-react';
+import { Camera, Volume2, Info, MapPin, Calendar, User, Leaf, HelpCircle, ArrowLeft, CheckCircle, Maximize, Minimize } from 'lucide-react';
 import { usePassportStore } from '../store/usePassportStore';
 import PannellumViewer from '../components/tour/PannellumViewer';
 
@@ -33,15 +33,7 @@ export default function TourViewer() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const [weatherData, setWeatherData] = useState<{ temp: number, isDay: number } | null>(null);
 
-  const coordinates: Record<string, { lat: number, lon: number }> = {
-    'Luanda': { lat: -8.8390, lon: 13.2894 },
-    'Benguela': { lat: -12.5763, lon: 13.4055 },
-    'Huíla': { lat: -14.9172, lon: 13.4925 },
-    'Huambo': { lat: -12.7761, lon: 15.7392 },
-    'default': { lat: -11.2027, lon: 17.8739 }
-  };
 
   // Base de dados simulada para as Tours 360
   const toursData: Record<string, any> = {
@@ -105,24 +97,6 @@ export default function TourViewer() {
   useEffect(() => {
     if (tour.province) {
       unlockStamp(tour.province);
-      
-      // Fetch Weather
-      const fetchWeather = async () => {
-        const coords = coordinates[tour.province] || coordinates['default'];
-        try {
-          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current_weather=true`);
-          const data = await res.json();
-          if (data && data.current_weather) {
-            setWeatherData({
-              temp: data.current_weather.temperature,
-              isDay: data.current_weather.is_day
-            });
-          }
-        } catch (error) {
-          console.error("Failed to fetch weather", error);
-        }
-      };
-      fetchWeather();
     }
   }, [tour.province, unlockStamp]);
 
@@ -151,20 +125,7 @@ export default function TourViewer() {
             </div>
             <h1 className="text-5xl md:text-7xl font-black text-white drop-shadow-lg tracking-tight">{tour.title}</h1>
           </div>
-          <div className="flex gap-4">
-            {weatherData && (
-              <div className="bg-dark-card border border-white/10 px-6 py-3 rounded-2xl text-center shadow-lg">
-                <span className="block text-xs uppercase tracking-wider text-text-muted font-bold mb-1">Tempo Atual</span>
-                <span className="text-white font-medium flex items-center justify-center gap-2">
-                  <Thermometer size={14} className="text-secondary"/> {weatherData.temp}°C
-                </span>
-              </div>
-            )}
-            <div className="bg-dark-card border border-white/10 px-6 py-3 rounded-2xl text-center shadow-lg">
-              <span className="block text-xs uppercase tracking-wider text-text-muted font-bold mb-1">Clima Ideal</span>
-              <span className="text-white font-medium flex items-center gap-2"><Calendar size={14} className="text-primary"/> {tour.bestTime}</span>
-            </div>
-          </div>
+
         </div>
       </header>
 
@@ -180,15 +141,8 @@ export default function TourViewer() {
             hotSpots={tour.hotspots || []}
           />
           
-          {/* Overlays Superiores */}
+          {/* Alertas Superiores */}
           <div className="absolute top-6 left-6 flex flex-col gap-3 z-10 pointer-events-none">
-            <div className="bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full flex items-center gap-3 text-xs font-bold text-white border border-white/10 shadow-lg">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-              </span>
-              EXPERIÊNCIA IMERSIVA 360°
-            </div>
             {showPhotoAlert && (
               <div className="bg-secondary text-black px-5 py-2.5 rounded-full flex items-center gap-2 text-xs font-bold animate-bounce shadow-[0_0_20px_rgba(255,215,0,0.3)]">
                 <CheckCircle size={16} /> Foto guardada no diário!
@@ -209,19 +163,7 @@ export default function TourViewer() {
             </button>
           </div>
 
-          {/* Hotspot Filters */}
-          <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-10">
-            {[
-              { icon: Eye, title: 'Mostrar Tudo', active: true },
-              { icon: Landmark, title: 'História / Património', active: false },
-              { icon: Leaf, title: 'Natureza / Ecoturismo', active: false },
-              { icon: Utensils, title: 'Sabores / Gastronomia', active: false },
-            ].map((filter, i) => (
-              <button key={i} className={`p-3.5 rounded-2xl transition-all duration-300 border ${filter.active ? 'bg-primary border-primary shadow-[0_0_20px_rgba(214,38,38,0.4)] text-white scale-110' : 'bg-black/40 backdrop-blur-md border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/30 hover:scale-105'}`} title={filter.title}>
-                <filter.icon size={22} />
-              </button>
-            ))}
-          </div>
+
 
           {/* Instructions */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-8 py-3 rounded-full text-sm font-medium text-white/90 pointer-events-none z-10 flex items-center gap-3 border border-white/10 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -311,13 +253,7 @@ export default function TourViewer() {
                 </div>
               </div>
               
-              <div className="flex items-center gap-4 p-4 rounded-2xl bg-black/20 border border-white/5 border-l-2 border-l-primary">
-                <div className="bg-primary/20 p-3 rounded-xl"><Landmark size={20} className="text-primary" /></div>
-                <div>
-                  <span className="block text-[10px] font-bold text-primary uppercase tracking-wider mb-1">Localização</span>
-                  <span className="text-white font-bold">{tour.province}</span>
-                </div>
-              </div>
+
             </div>
 
             <Link to="/explore" className="flex items-center justify-center gap-2 w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 py-4 rounded-2xl font-bold transition-all hover:scale-[1.02]">

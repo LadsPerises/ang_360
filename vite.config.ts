@@ -8,4 +8,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://angola360.ao',
+        changeOrigin: true,
+        secure: false,
+        cookieDomainRewrite: 'localhost', // Reescreve o domínio do cookie para funcionar no localhost
+      }
+    }
+  }
 })

@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS `passports` (
   `photos`             JSON         NULL,
   `treasures`          JSON         NULL,
   `avatar`             VARCHAR(255) NOT NULL DEFAULT 'default',
+  `archetype`          VARCHAR(50)  NOT NULL DEFAULT '',
   PRIMARY KEY (`user_id`),
   CONSTRAINT `fk_passports_user` FOREIGN KEY (`user_id`)
     REFERENCES `users` (`id`) ON DELETE CASCADE

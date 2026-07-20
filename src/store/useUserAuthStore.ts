@@ -34,14 +34,6 @@ export const useUserAuthStore = create<UserAuthState>()(
       isAuthenticated: false,
 
       login: async (email, password) => {
-        if (import.meta.env.DEV) {
-          // Fallback mock para desenvolvimento local sem PHP
-          const name = email.split('@')[0];
-          const user = { id: Date.now().toString(), name, email };
-          set({ user, isAuthenticated: true });
-          usePassportStore.getState().setName(name);
-          return;
-        }
 
         try {
           const res = await fetch('/api/login.php', {
@@ -66,12 +58,6 @@ export const useUserAuthStore = create<UserAuthState>()(
       },
 
       register: async (name, email, password) => {
-        if (import.meta.env.DEV) {
-          const user = { id: Date.now().toString(), name, email };
-          set({ user, isAuthenticated: true });
-          usePassportStore.getState().setName(name);
-          return;
-        }
 
         try {
           const res = await fetch('/api/register.php', {

@@ -3,9 +3,20 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, X, Compass } from 'lucide-react';
 
 import { PROVINCES_DATA } from '../data/provincesData';
-
+import { usePassportStore } from '../store/usePassportStore';
 
 const PROVINCES = PROVINCES_DATA.map(p => p.name);
+
+const TOUR_ARCHETYPES: Record<string, string> = {
+  '1': 'Historiador', // Fortaleza de São Miguel (Luanda)
+  '7': 'Historiador', // Cristo Rei (Huíla)
+  '2': 'Amante da Natureza', // Praia da Caotinha (Benguela)
+  '5': 'Amante da Natureza', // Quedas de Kalandula (Malanje)
+  '6': 'Amante da Natureza', // Kissama (Bengo)
+  '8': 'Amante da Natureza', // Mussulo (Luanda)
+  '3': 'Aventureiro', // Serra da Leba (Huíla)
+  '4': 'Aventureiro', // Baía dos Tigres (Namibe)
+};
 
 const SPECIFIC_TOURS = [
   { id: '1', title: 'Fortaleza de São Miguel', province: 'Luanda', excerpt: 'Explore a história militar de Luanda nesta fortaleza icónica com vista para a baía.', image: '/assets/images/tours/tour_1_fortaleza.png' },
@@ -30,6 +41,7 @@ const MOCK_TOURS = [
 ];
 
 export default function Explore() {
+  const { archetype } = usePassportStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentProvince = searchParams.get('province') || '';
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,7 +130,25 @@ export default function Explore() {
         {/* Tours Grid */}
         {filteredTours.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredTours.map(tour => (
+            {filteredTours.map(tour => {
+              const tourArchetype = TOUR_ARCHETYPES[tour.id];
+              const isRecommended = archetype && tourArchetype === archetype;
+
+              const getArchetypeBadgeColor = () => {
+                switch (archetype) {
+                  case 'Historiador':
+                    return 'bg-amber-500/85 border-amber-500/30 text-white';
+                  case 'Aventureiro':
+                    return 'bg-red-500/85 border-red-500/30 text-white';
+                  case 'Amante da Natureza':
+                    return 'bg-emerald-500/85 border-emerald-500/30 text-white';
+                  default:
+                    return '';
+                }
+              };
+              const archBadgeColor = getArchetypeBadgeColor();
+
+              return (
               <Link key={tour.id} to={`/tour/${tour.id}`} className="group bg-dark-card rounded-3xl overflow-hidden border border-white/5 shadow-xl hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full">
                 <div className="relative aspect-video overflow-hidden">
                   <img 
@@ -130,9 +160,15 @@ export default function Explore() {
                     <MapPin size={14} className="text-primary" />
                     {tour.province}
                   </div>
-                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-bold text-white border border-white/10">
-                    360°
-                  </div>
+                  {isRecommended ? (
+                    <div className={`absolute top-4 right-4 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black border flex items-center gap-1 shadow-md ${archBadgeColor}`}>
+                      <span>✨</span> Recomendado
+                    </div>
+                  ) : (
+                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-bold text-white border border-white/10">
+                      360°
+                    </div>
+                  )}
                 </div>
                 
                 <div className="p-6 flex flex-col flex-1">
@@ -147,7 +183,7 @@ export default function Explore() {
                   </button>
                 </div>
               </Link>
-            ))}
+            )})}
           </div>
         ) : (
           <div className="text-center py-20 bg-dark-card rounded-3xl border border-white/5">

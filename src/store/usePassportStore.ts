@@ -39,11 +39,13 @@ interface PassportState {
   completedMissions: string[];
   favoriteProvince: string;
   avatar: string;
+  archetype: string;
   
   // Actions
   setName: (name: string) => void;
   setAvatar: (avatar: string) => void;
   setFavoriteProvince: (province: string) => void;
+  setArchetype: (archetype: string) => void;
   toggleWishlist: (province: string) => void;
   unlockStamp: (province: string) => void;
   addPhoto: (url: string, province: string) => void;
@@ -77,6 +79,7 @@ export const usePassportStore = create<PassportState>()(
       completedMissions: [],
       favoriteProvince: '',
       avatar: 'default',
+      archetype: '',
 
       setName: (name) => set({ name }),
       setAvatar: (avatar) => {
@@ -84,6 +87,10 @@ export const usePassportStore = create<PassportState>()(
         get().syncWithServer();
       },
       setFavoriteProvince: (province) => set({ favoriteProvince: province }),
+      setArchetype: (archetype) => {
+        set({ archetype });
+        get().syncWithServer();
+      },
 
       toggleWishlist: (province) => {
         const { wishlist } = get();
@@ -148,12 +155,12 @@ export const usePassportStore = create<PassportState>()(
         treasures: [],
         completedMissions: [],
         level: 'Novato',
-        favoriteProvince: ''
+        favoriteProvince: '',
+        archetype: ''
       }),
 
       syncWithServer: async () => {
-        // Em desenvolvimento sem backend, ignora
-        if (import.meta.env.DEV) return;
+
         try {
           // user_id é determinado pelo servidor a partir da sessão (cookie httpOnly).
           // Nunca confiamos em ID enviado pelo cliente (anti-IDOR).
@@ -172,6 +179,7 @@ export const usePassportStore = create<PassportState>()(
                 completedMissions: state.completedMissions,
                 favoriteProvince: state.favoriteProvince,
                 avatar: state.avatar,
+                archetype: state.archetype,
                 photos: state.photos,
                 treasures: state.treasures
               }
@@ -185,7 +193,6 @@ export const usePassportStore = create<PassportState>()(
 
       loadFromServer: async () => {
         // user_id vem da sessão no servidor.
-        if (import.meta.env.DEV) return;
         try {
           const res = await fetch('/api/sync_passport.php', {
             method: 'POST',
@@ -203,6 +210,7 @@ export const usePassportStore = create<PassportState>()(
               completedMissions: data.passport.completedMissions || [],
               favoriteProvince: data.passport.favoriteProvince || '',
               avatar: data.passport.avatar || 'default',
+              archetype: data.passport.archetype || '',
               photos: data.passport.photos || [],
               treasures: data.passport.treasures || []
             });
